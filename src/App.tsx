@@ -4,20 +4,21 @@ import { I18nProvider } from './i18n/I18nContext';
 import { PlayerProvider, usePlayer } from './context/PlayerContext';
 import { Sidebar } from './components/Sidebar';
 import { PlayerBar } from './components/PlayerBar';
-import { HomeView } from './components/HomeView';
 import { SearchView } from './components/SearchView';
 import { LibraryView } from './components/LibraryView';
 import { PlaylistDetail } from './components/PlaylistDetail';
 import { NowPlayingView } from './components/NowPlayingView';
 import { SettingsView } from './components/SettingsView';
+import { DiscoverView } from './components/DiscoverView';
+import { QueueView } from './components/QueueView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import './App.css';
 
 function AppContent() {
-  const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [currentView, setCurrentView] = useState<ViewType>('discover');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [prevView, setPrevView] = useState<ViewType>('home');
+  const [prevView, setPrevView] = useState<ViewType>('discover');
   const { userPlaylists, togglePlay, nextTrack, prevTrack, state, dispatch, audioRef } = usePlayer();
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +59,7 @@ function AppContent() {
 
   const handleBack = useCallback(() => {
     setSelectedPlaylistId(null);
-    setCurrentView('home');
+    setCurrentView('library');
   }, []);
 
   const handleOpenNowPlaying = useCallback(() => {
@@ -66,6 +67,11 @@ function AppContent() {
       setPrevView(currentView);
       setCurrentView('nowplaying');
     }
+  }, [currentView]);
+
+  const handleOpenQueue = useCallback(() => {
+    setPrevView(currentView);
+    setCurrentView('queue');
   }, [currentView]);
 
   const handleCloseNowPlaying = useCallback(() => {
@@ -81,13 +87,16 @@ function AppContent() {
       case 'nowplaying':
         return <NowPlayingView onBack={handleCloseNowPlaying} />;
       case 'home':
-        return <HomeView onSelectPlaylist={handleSelectPlaylist} />;
-      case 'search':
-        return <SearchView onSelectPlaylist={handleSelectPlaylist} />;
       case 'library':
         return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
+      case 'search':
+        return <SearchView onSelectPlaylist={handleSelectPlaylist} />;
       case 'settings':
         return <SettingsView />;
+      case 'discover':
+        return <DiscoverView />;
+      case 'queue':
+        return <QueueView onBack={() => setCurrentView(prevView)} />;
       case 'playlist':
         if (selectedPlaylist) {
           return (
@@ -97,9 +106,9 @@ function AppContent() {
             />
           );
         }
-        return <HomeView onSelectPlaylist={handleSelectPlaylist} />;
+        return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
       default:
-        return <HomeView onSelectPlaylist={handleSelectPlaylist} />;
+        return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
     }
   }
 
@@ -109,7 +118,7 @@ function AppContent() {
         {currentView !== 'nowplaying' && (
           <>
             <Sidebar
-              currentView={currentView === 'playlist' ? 'home' : currentView}
+              currentView={currentView === 'playlist' ? 'library' : currentView}
               onViewChange={handleViewChange}
               onSelectPlaylist={handleSelectPlaylist}
               collapsed={sidebarCollapsed}
@@ -125,7 +134,7 @@ function AppContent() {
           {renderMainContent()}
         </main>
       </div>
-      <PlayerBar onOpenNowPlaying={handleOpenNowPlaying} />
+      <PlayerBar onOpenNowPlaying={handleOpenNowPlaying} onOpenQueue={handleOpenQueue} />
     </div>
   );
 }

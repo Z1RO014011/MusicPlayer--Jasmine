@@ -17,13 +17,6 @@ export function HomeView({ onSelectPlaylist }: HomeViewProps) {
 
   return (
     <div className="home-view">
-      <section className="hero-section">
-        <div className="hero-content">
-          <h1 className="hero-title">Your music, your way</h1>
-          <p className="hero-subtitle">{t('default.importHero')}</p>
-        </div>
-      </section>
-
       {hasContent ? (
         <>
           {userPlaylists.length > 0 && (

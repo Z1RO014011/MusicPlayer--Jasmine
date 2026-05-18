@@ -4,9 +4,10 @@ import { useI18n } from '../i18n/I18nContext';
 
 interface PlayerBarProps {
   onOpenNowPlaying?: () => void;
+  onOpenQueue?: () => void;
 }
 
-export function PlayerBar({ onOpenNowPlaying }: PlayerBarProps) {
+export function PlayerBar({ onOpenNowPlaying, onOpenQueue }: PlayerBarProps) {
   const { state, dispatch, togglePlay, nextTrack, prevTrack, audioRef, isLiked, toggleLike } = usePlayer();
   const { t } = useI18n();
   const { currentSong, isPlaying, currentTime, duration, volume, isShuffled, repeatMode } = state;
@@ -123,6 +124,15 @@ export function PlayerBar({ onOpenNowPlaying }: PlayerBarProps) {
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill={isLiked(currentSong.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </button>
+            <button
+              className="queue-btn"
+              onClick={onOpenQueue}
+              title={t('queue.title')}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M15 6H3v2h12V6zm0 4H3v2h12v-2zM3 16h8v-2H3v2zM17 6v8.18c-.31-.11-.65-.18-1-.18-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3V8h3V6h-5z"/>
               </svg>
             </button>
           </div>

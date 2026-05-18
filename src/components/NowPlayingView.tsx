@@ -162,7 +162,7 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
       </div>
 
       {/* Main content */}
-      {showLyrics && hasLyrics ? (
+      {showLyrics ? (
         /* ── LYRICS MODE: split layout ── */
         <div className="np-lyrics-mode-layout">
           <div className="np-lyrics-left">
@@ -251,34 +251,49 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
           </div>
 
           <div className="np-lyrics-right">
-            {hasLyrics && (
-              <div className="np-lyrics-right-actions">
-                <button
-                  className="nowplaying-lyrics-edit-btn"
-                  onClick={() => { setEditingLyrics(true); setLrcInput(''); }}
-                  title={t('np.editLyrics')}
-                >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M16.86 3.02a1.5 1.5 0 012.12 2.12l-10.6 10.6-2.84.7.7-2.84 10.62-10.58zM4 20h16v-2H4v2z"/>
-                  </svg>
-                </button>
-                <button
-                  className={`nowplaying-lyrics-toggle${showLyrics ? ' active' : ''}`}
-                  onClick={() => { setShowLyrics(false); setEditingLyrics(false); }}
-                  title={t('np.closeLyrics')}
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            {hasLyrics ? (
+              <>
+                <div className="np-lyrics-right-actions">
+                  <button
+                    className="nowplaying-lyrics-edit-btn"
+                    onClick={() => { setEditingLyrics(true); setLrcInput(''); }}
+                    title={t('np.editLyrics')}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M16.86 3.02a1.5 1.5 0 012.12 2.12l-10.6 10.6-2.84.7.7-2.84 10.62-10.58zM4 20h16v-2H4v2z"/>
+                    </svg>
+                  </button>
+                  <button
+                    className={`nowplaying-lyrics-toggle${showLyrics ? ' active' : ''}`}
+                    onClick={() => { setShowLyrics(false); setEditingLyrics(false); }}
+                    title={t('np.closeLyrics')}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                      <path d="M3 4h18v2H3V4zm0 7h12v2H3v-2zm0 7h18v2H3v-2z"/>
+                    </svg>
+                  </button>
+                </div>
+                <LyricsView
+                  lyrics={lyrics}
+                  currentTime={currentTime}
+                  isPlaying={isPlaying}
+                  onSeek={handleLyricSeek}
+                />
+              </>
+            ) : (
+              <div className="nowplaying-no-lyrics">
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                  <path d="M3 4h18v2H3V4zm0 7h12v2H3v-2zm0 7h18v2H3v-2z"/>
+                </svg>
+                <p>{t('np.noLyrics')}</p>
+                <button className="nowplaying-add-lyrics-btn" onClick={() => { setEditingLyrics(true); setLrcInput(''); }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                     <path d="M3 4h18v2H3V4zm0 7h12v2H3v-2zm0 7h18v2H3v-2z"/>
                   </svg>
+                  {t('np.addLyrics')}
                 </button>
               </div>
             )}
-            <LyricsView
-              lyrics={lyrics}
-              currentTime={currentTime}
-              isPlaying={isPlaying}
-              onSeek={handleLyricSeek}
-            />
           </div>
         </div>
       ) : (
@@ -287,9 +302,9 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
           <div className="nowplaying-view-left">
             <div
               className="nowplaying-view-cover"
-              onClick={() => { if (hasLyrics) setShowLyrics(true); }}
-              title={hasLyrics ? t('np.clickForLyrics') : t('np.addLyrics')}
-              style={hasLyrics ? { cursor: 'pointer' } : undefined}
+              onClick={() => setShowLyrics(true)}
+              title={t('np.clickForLyrics')}
+              style={{ cursor: 'pointer' }}
             >
               <div
                 className="nowplaying-view-cover-art"

@@ -10,7 +10,7 @@ interface PlaylistDetailProps {
 }
 
 export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
-  const { playPlaylist, playSong, removeSongFromPlaylist, deletePlaylist, renamePlaylist, userSongs, addSongsToPlaylist, updatePlaylistCover } = usePlayer();
+  const { playPlaylist, playSong, removeSongFromPlaylist, deletePlaylist, renamePlaylist, userSongs, addSongsToPlaylist, updatePlaylistCover, toggleLike, isLiked } = usePlayer();
   const { t } = useI18n();
   const isLikedPlaylist = playlist.id === LIKED_PLAYLIST_ID;
   const [isEditing, setIsEditing] = useState(false);
@@ -77,8 +77,9 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
           onClick={() => setShowCoverEditor(!showCoverEditor)}
           title={t('playlist.changeCover')}
         >
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4h2v4h14v-4h2zM7 9l3-4 3 4h2l-4-5-4 5h2zm10-1V3h-2v5h-3l4 5 4-5h-3z"/>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
         </button>
 
@@ -201,6 +202,7 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
             <span className="track-col-title">{t('library.headerTitle')}</span>
             <span className="track-col-artist">{t('library.headerArtist')}</span>
             <span className="track-col-album">{t('library.headerAlbum')}</span>
+            <span className="track-col-like"></span>
             <span className="track-col-duration">{t('library.headerDuration')}</span>
             <span className="track-col-action">{t('library.headerAction')}</span>
           </div>
@@ -217,6 +219,17 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
                   </span>
                   <span className="track-col-artist">{song.artist}</span>
                   <span className="track-col-album">{song.album}</span>
+                  <span className="track-col-like">
+                    <button
+                      className={`track-like-btn ${isLiked(song.id) ? 'liked' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); toggleLike(song); }}
+                      title={isLiked(song.id) ? t('player.unlike') : t('player.like')}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill={isLiked(song.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                      </svg>
+                    </button>
+                  </span>
                   <span className="track-col-duration">
                     {Math.floor(song.duration / 60)}:{String(Math.floor(song.duration % 60)).padStart(2, '0')}
                   </span>

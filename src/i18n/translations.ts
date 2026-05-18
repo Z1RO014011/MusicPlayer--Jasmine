@@ -5,9 +5,11 @@ export type TranslationMap = Record<string, string>;
 const zh: TranslationMap = {
   // Nav
   'nav.home': '首页',
+  'nav.myMusic': '我的音乐',
   'nav.search': '搜索',
   'nav.library': '音乐库',
   'nav.settings': '设置',
+  'nav.discover': '发现',
 
   // Actions
   'action.importMusic': '导入音乐',
@@ -33,8 +35,11 @@ const zh: TranslationMap = {
   'player.repeatOne': '单曲循环',
 
   // Sidebar
+  'sidebar.savedAlbums': '收藏专辑',
   'sidebar.yourPlaylists': '你的歌单',
   'sidebar.emptyHint': '还没有歌单，点击上方创建',
+  'album.save': '收藏专辑',
+  'album.remove': '取消收藏',
 
   // Home
   'home.yourPlaylists': '你的歌单',
@@ -56,6 +61,10 @@ const zh: TranslationMap = {
   'library.title': '音乐库',
   'library.tabPlaylists': '歌单 ({count})',
   'library.tabSongs': '歌曲 ({count})',
+  'library.tabAlbums': '收藏专辑 ({count})',
+  'library.tabHistory': '我听过的',
+  'library.tabLocal': '本地歌曲 ({count})',
+  'library.emptyLocal': '还没有导入本地歌曲，点击上方「导入音乐」添加',
   'library.newPlaylist': '新建歌单',
   'library.emptyPlaylists': '还没有歌单，点击上方按钮创建一个',
   'library.emptySongs': '还没有导入歌曲，点击左侧「导入音乐」添加',
@@ -105,6 +114,7 @@ const zh: TranslationMap = {
   'np.artist': '艺术家',
   'np.duration': '时长',
   'np.addLyrics': '添加歌词',
+  'np.noLyrics': '暂时没有歌词',
   'np.share': '分享',
   'np.shareSong': '分享歌曲',
   'np.shareCard': '分享卡片',
@@ -120,7 +130,7 @@ const zh: TranslationMap = {
   'default.unknownAlbum': '未知专辑',
   'default.unknownUser': '未知用户',
   'default.playlistDescription': '{name} · 自建歌单',
-  'default.importHero': '导入本地音乐，创建专属歌单',
+
 
   // Settings
   'settings.title': '设置',
@@ -132,14 +142,69 @@ const zh: TranslationMap = {
   'common.durationHours': '{h} 小时 {m} 分钟',
   'common.durationMinutes': '{m} 分钟',
   'common.durationApprox': '约',
+
+  // Discover
+  'discover.search': '搜索',
+  'discover.recommended': '推荐歌单',
+  'discover.charts': '排行榜',
+  'discover.searchPlaceholder': '搜索歌曲、歌手...',
+  'discover.artists': '歌手',
+  'discover.albums': '专辑',
+  'discover.songs': '首歌',
+  'discover.searchSongs': '歌曲',
+  'discover.searchPlaylists': '歌单',
+  'discover.searchHint': '搜索你想听的音乐',
+  'discover.searchHintDesc': '在上方搜索框中输入歌名、艺术家来搜索海量在线音乐',
+  'discover.hotSearch': '热门搜索',
+  'discover.browseAll': '浏览全部',
+  'discover.chooseCategory': '选择分类',
+  'discover.backToCategories': '返回分类',
+  'discover.noOnlineResults': '未找到 "{query}" 的相关结果',
+  'discover.loading': '加载中...',
+  'discover.loadFailed': '加载失败',
+  'discover.download': '下载到本地',
+  'discover.downloading': '下载中...',
+  'discover.downloaded': '已下载',
+  'discover.addToQueue': '添加到队列',
+  'discover.addToPlaylist': '添加到歌单',
+  'discover.noPlaylist': '还没有歌单，请先在侧边栏创建一个',
+
+  // Login
+  'login.title': '登录网易云音乐',
+  'login.hint': '请用网易云音乐 App 扫描二维码',
+  'login.waiting': '等待扫码...',
+  'login.waitingConfirm': '请在手机上确认登录',
+  'login.scanned': '已扫码，请确认',
+  'login.success': '登录成功！',
+  'login.expired': '二维码已过期，请重新获取',
+  'login.error': '获取二维码失败，请检查网络',
+  'login.retry': '重新获取',
+  'login.loginBtn': '登录网易云',
+  'login.loggedInAs': '已登录：{name}',
+
+  // History
+  'history.today': '今天',
+  'history.yesterday': '昨天',
+  'history.thisWeek': '本周',
+  'history.earlier': '更早',
+  'history.empty': '还没有播放记录，去听听音乐吧',
+  'history.title': '我听过的',
+
+  // Queue
+  'queue.title': '播放队列',
+  'queue.count': '{count} 首歌曲',
+  'queue.nowPlaying': '正在播放',
+  'queue.empty': '队列为空，去发现或导入音乐吧',
 };
 
 const en: TranslationMap = {
   // Nav
   'nav.home': 'Home',
+  'nav.myMusic': 'My Music',
   'nav.search': 'Search',
   'nav.library': 'Library',
   'nav.settings': 'Settings',
+  'nav.discover': 'Discover',
 
   // Actions
   'action.importMusic': 'Import Music',
@@ -165,8 +230,11 @@ const en: TranslationMap = {
   'player.repeatOne': 'One',
 
   // Sidebar
+  'sidebar.savedAlbums': 'Saved Albums',
   'sidebar.yourPlaylists': 'Your Playlists',
   'sidebar.emptyHint': 'No playlists yet, create one above',
+  'album.save': 'Save Album',
+  'album.remove': 'Remove',
 
   // Home
   'home.yourPlaylists': 'Your Playlists',
@@ -188,6 +256,10 @@ const en: TranslationMap = {
   'library.title': 'Library',
   'library.tabPlaylists': 'Playlists ({count})',
   'library.tabSongs': 'Songs ({count})',
+  'library.tabAlbums': 'Saved Albums ({count})',
+  'library.tabHistory': 'History',
+  'library.tabLocal': 'Local ({count})',
+  'library.emptyLocal': 'No local songs yet, click "Import Music" above',
   'library.newPlaylist': 'New Playlist',
   'library.emptyPlaylists': 'No playlists yet, click the button above to create one',
   'library.emptySongs': 'No songs imported yet, click "Import Music" in the sidebar',
@@ -237,6 +309,7 @@ const en: TranslationMap = {
   'np.artist': 'Artist',
   'np.duration': 'Duration',
   'np.addLyrics': 'Add Lyrics',
+  'np.noLyrics': 'No lyrics yet',
   'np.share': 'Share',
   'np.shareSong': 'Share Song',
   'np.shareCard': 'Share Card',
@@ -252,7 +325,7 @@ const en: TranslationMap = {
   'default.unknownAlbum': 'Unknown Album',
   'default.unknownUser': 'Unknown User',
   'default.playlistDescription': '{name}',
-  'default.importHero': 'Import local music, create your playlists',
+
 
   // Settings
   'settings.title': 'Settings',
@@ -264,6 +337,59 @@ const en: TranslationMap = {
   'common.durationHours': '{h} h {m} min',
   'common.durationMinutes': '{m} min',
   'common.durationApprox': 'approx.',
+
+  // Discover
+  'discover.search': 'Search',
+  'discover.recommended': 'Recommended',
+  'discover.charts': 'Charts',
+  'discover.searchPlaceholder': 'Search songs, artists...',
+  'discover.artists': 'Artists',
+  'discover.albums': 'Albums',
+  'discover.songs': 'songs',
+  'discover.searchSongs': 'Songs',
+  'discover.searchPlaylists': 'Playlists',
+  'discover.searchHint': 'Search your music',
+  'discover.searchHintDesc': 'Enter a song name or artist above to search millions of tracks',
+  'discover.hotSearch': 'Hot Search',
+  'discover.browseAll': 'Browse All',
+  'discover.chooseCategory': 'Choose Category',
+  'discover.backToCategories': 'Back to Categories',
+  'discover.noOnlineResults': 'No results found for "{query}"',
+  'discover.loading': 'Loading...',
+  'discover.loadFailed': 'Failed to load',
+  'discover.download': 'Download to Library',
+  'discover.downloading': 'Downloading...',
+  'discover.downloaded': 'Downloaded',
+  'discover.addToQueue': 'Add to Queue',
+  'discover.addToPlaylist': 'Add to Playlist',
+  'discover.noPlaylist': 'No playlists yet, create one in the sidebar first',
+
+  // Login
+  'login.title': 'Login to NetEase Music',
+  'login.hint': 'Scan QR code with NetEase Music App',
+  'login.waiting': 'Waiting for scan...',
+  'login.waitingConfirm': 'Confirm on your phone',
+  'login.scanned': 'Scanned, please confirm',
+  'login.success': 'Login successful!',
+  'login.expired': 'QR code expired, please retry',
+  'login.error': 'Failed to get QR code, check network',
+  'login.retry': 'Retry',
+  'login.loginBtn': 'Login',
+  'login.loggedInAs': 'Logged in: {name}',
+
+  // History
+  'history.today': 'Today',
+  'history.yesterday': 'Yesterday',
+  'history.thisWeek': 'This Week',
+  'history.earlier': 'Earlier',
+  'history.empty': 'No listening history yet, go play some music',
+  'history.title': 'Listening History',
+
+  // Queue
+  'queue.title': 'Play Queue',
+  'queue.count': '{count} songs',
+  'queue.nowPlaying': 'Now Playing',
+  'queue.empty': 'Queue is empty, discover or import some music',
 };
 
 export const translations: Record<Language, TranslationMap> = { zh, en };

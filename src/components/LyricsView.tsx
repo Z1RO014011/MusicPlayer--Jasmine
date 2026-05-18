@@ -19,12 +19,13 @@ export function LyricsView({ lyrics, currentTime, isPlaying: _isPlaying, onSeek 
     [lyrics, currentTime],
   );
 
-  // Auto-scroll to active line (centered)
+  // Auto-scroll to active line (instant, no animation lag)
   useEffect(() => {
     if (activeIndex < 0 || userScrolled) return;
-    const el = containerRef.current?.querySelector(`[data-lyric-index="${activeIndex}"]`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const container = containerRef.current;
+    const el = container?.querySelector(`[data-lyric-index="${activeIndex}"]`) as HTMLElement | null;
+    if (container && el) {
+      container.scrollTop = el.offsetTop - container.clientHeight / 2 + el.offsetHeight / 2;
     }
   }, [activeIndex, userScrolled]);
 

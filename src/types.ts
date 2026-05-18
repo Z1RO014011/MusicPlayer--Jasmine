@@ -10,6 +10,9 @@ export interface Song {
   album: string;
   duration: number;
   coverColor: string;
+  coverUrl?: string;
+  source?: 'local' | 'online';
+  neteaseId?: number;
   audioUrl?: string;
   lyrics?: LyricLine[];
 }
@@ -24,7 +27,17 @@ export interface Playlist {
   creator?: string;
 }
 
-export type ViewType = 'home' | 'search' | 'library' | 'playlist' | 'nowplaying' | 'settings';
+export interface SavedAlbum {
+  id: string;
+  neteaseId: number;
+  name: string;
+  artist: string;
+  picUrl: string;
+  coverColor: string;
+  savedAt: number;
+}
+
+export type ViewType = 'home' | 'search' | 'library' | 'playlist' | 'nowplaying' | 'settings' | 'discover' | 'queue';
 
 export interface PlayerState {
   currentSong: Song | null;
