@@ -33,16 +33,11 @@ No Node.js required — download and run the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| macOS (Apple Silicon) | [Jasmine Music Player-1.3.0-arm64.dmg](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64.dmg) | DMG installer |
-| macOS (Apple Silicon) | [Jasmine Music Player-1.3.0-arm64-mac.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64-mac.zip) | ZIP portable |
-| macOS (Intel x64) | [Jasmine Music Player-1.3.0.dmg](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0.dmg) | DMG installer |
-| macOS (Intel x64) | [Jasmine Music Player-1.3.0-mac.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-mac.zip) | ZIP portable |
-| Windows (x64) | [Jasmine Music Player-1.3.0-win.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-win.zip) | ZIP portable |
-| Windows (ARM64) | [Jasmine Music Player-1.3.0-arm64-win.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64-win.zip) | ZIP portable |
-| Linux (x64) | [Jasmine Music Player-1.3.0.AppImage](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0.AppImage) | AppImage portable |
-| Linux (x64) | [jasmine-music-player_1.3.0_amd64.deb](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/jasmine-music-player_1.3.0_amd64.deb) | DEB package |
-| Linux (ARM64) | [Jasmine Music Player-1.3.0-arm64.AppImage](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64.AppImage) | AppImage portable |
-| Linux (ARM64) | [jasmine-music-player_1.3.0_arm64.deb](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/jasmine-music-player_1.3.0_arm64.deb) | DEB package |
+| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64.dmg) | DMG installer |
+| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64-mac.zip) | ZIP portable |
+| macOS (Intel x64) | [Jasmine-2.0.0.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0.dmg) | DMG installer |
+| macOS (Intel x64) | [Jasmine-2.0.0-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-mac.zip) | ZIP portable |
+| Windows (x64) | [Jasmine Setup 2.0.0.exe](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine.Setup.2.0.0.exe) | NSIS installer |
 
 > After downloading, open and run directly. On first launch, macOS users need to go to **System Settings → Privacy & Security** and click "Open Anyway".
 
