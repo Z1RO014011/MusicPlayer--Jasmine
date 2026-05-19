@@ -37,7 +37,7 @@ No Node.js required — download and run the installer for your platform:
 | macOS (Apple Silicon) | [Jasmine-2.0.0-arm64-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64-mac.zip) | ZIP portable |
 | macOS (Intel x64) | [Jasmine-2.0.0.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0.dmg) | DMG installer |
 | macOS (Intel x64) | [Jasmine-2.0.0-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-mac.zip) | ZIP portable |
-| Windows (x64) | [Jasmine Setup 2.0.0.exe](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine.Setup.2.0.0.exe) | NSIS installer |
+| Windows (x64) | [Jasmine.Setup.2.0.0.exe](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine.Setup.2.0.0.exe) | NSIS installer |
 
 > Note: The v2.0.0 release currently includes macOS (Intel/Apple Silicon) and Windows x64 installers only.
 
