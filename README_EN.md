@@ -1,52 +1,57 @@
-# 🎵 Jasmine Music Player
+# Jasmine
 
 [中文](README.md) | English
 
-A full-featured Spotify-style web music player built with **Vite + React 18 + TypeScript + Electron**.
+A full-featured desktop music player built with **Vite + React 18 + TypeScript + Electron**.
 
-## ✨ Features
+## Features
 
-- **Lyrics Display** — LRC format lyrics with scrolling sync highlight
-- **Playlist Cover** — Upload an image or pick a gradient color as playlist cover
+- **Online Music** — Netease Cloud Music search, playlists, artists, albums, QR login, lyrics, and playback
+- **Discover** — Hot searches, recommendations, playlist categories, and charts
+- **Source Abstraction** — MusicSource interface is in place; Netease is currently registered. `youtubei.js` is reserved for future YouTube integration but is not wired into the UI/source registry yet.
+- **Local Music** — Import multiple audio files, read metadata, and persist audio data in IndexedDB
+- **Lyrics Display** — Apple Music-style LRC sync, scrolling highlight, and lyric editing
+- **Playlist Management** — Create, delete, rename playlists; upload an image or pick a gradient cover
+- **Playback Controls** — Play/pause, previous/next, seek, volume, and playback queue
+- **Playback Modes** — Shuffle and repeat (off / all / one)
+- **Playback History** — Automatically records listening history and groups it by time
+- **Internationalization** — Chinese and English UI
 - **Song Sharing** — Generate beautiful share cards, download as PNG
-- **Playback Controls** — Play/pause, previous/next, seek, volume control
-- **Playback Modes** — Shuffle, repeat (off / all / one)
-- **Playlist Management** — Create, delete, rename playlists; add, remove songs
-- **Music Import** — Multi-file upload, auto-detect duration, data persisted to IndexedDB + localStorage
-- **Fullscreen Now Playing** — Spotify-style fullscreen player with dynamic blurred gradient background
-- **Search** — Search songs and playlists
-- **Keyboard Shortcuts** — Space / → / ← / ↑ / ↓ / S / R
+- **Keyboard Shortcuts** — Space / → / ← / ↑ / ↓ / S / R / Shift+→ / Shift+←
 - **Dark Theme** — Spotify-style dark UI
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173/music-player/` in your browser.
+Open `http://127.0.0.1:5173/music-player/` in your browser.
 
-### 🖥️ Desktop App (Download Installer)
+For browser-based debugging of online search, QR login, lyrics, and streaming, use:
+
+```bash
+npm run dev:online
+```
+
+> `npm run dev` starts only the frontend. `npm run dev:online` starts both the frontend and the local Netease API service. Electron mode starts that service automatically.
+
+### Desktop App (Download Installer)
 
 No Node.js required — download and run the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| macOS (Apple Silicon) | [Jasmine Music Player-1.3.0-arm64.dmg](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64.dmg) | DMG installer |
-| macOS (Apple Silicon) | [Jasmine Music Player-1.3.0-arm64-mac.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64-mac.zip) | ZIP portable |
-| macOS (Intel x64) | [Jasmine Music Player-1.3.0.dmg](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0.dmg) | DMG installer |
-| macOS (Intel x64) | [Jasmine Music Player-1.3.0-mac.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-mac.zip) | ZIP portable |
-| Windows (x64) | [Jasmine Music Player-1.3.0-win.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-win.zip) | ZIP portable |
-| Windows (ARM64) | [Jasmine Music Player-1.3.0-arm64-win.zip](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64-win.zip) | ZIP portable |
-| Linux (x64) | [Jasmine Music Player-1.3.0.AppImage](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0.AppImage) | AppImage portable |
-| Linux (x64) | [jasmine-music-player_1.3.0_amd64.deb](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/jasmine-music-player_1.3.0_amd64.deb) | DEB package |
-| Linux (ARM64) | [Jasmine Music Player-1.3.0-arm64.AppImage](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/Jasmine%20Music%20Player-1.3.0-arm64.AppImage) | AppImage portable |
-| Linux (ARM64) | [jasmine-music-player_1.3.0_arm64.deb](https://github.com/Z1RO014011/opencode--DeepSeekV4-flash-MusicPlayer/releases/download/v1.3.0/jasmine-music-player_1.3.0_arm64.deb) | DEB package |
+| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64.dmg](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0-arm64.dmg) | DMG installer |
+| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64-mac.zip](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0-arm64-mac.zip) | ZIP portable |
+| macOS (Intel x64) | [Jasmine-2.0.0.dmg](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0.dmg) | DMG installer |
+| macOS (Intel x64) | [Jasmine-2.0.0-mac.zip](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0-mac.zip) | ZIP portable |
+| Windows (x64) | [Jasmine Setup 2.0.0.exe](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine%20Setup%202.0.0.exe) | NSIS installer |
 
 > After downloading, open and run directly. On first launch, macOS users need to go to **System Settings → Privacy & Security** and click "Open Anyway".
 
-### 🛠️ Developer Mode (Run from Source)
+### Developer Mode (Run from Source)
 
 ```bash
 npm install
@@ -56,45 +61,63 @@ npm run electron:dev
 Or build the installer:
 
 ```bash
-npm run electron:build
+npm run electron:build        # current platform
+npm run electron:build:all    # all configured platforms
 ```
 
 Build artifacts are in the `release/` directory.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Tech | Purpose |
 |------|---------|
-| Vite | Build tool |
+| Vite 6 | Build tool |
 | React 18 | UI framework |
 | TypeScript | Type safety |
+| Electron 41 | Desktop app shell |
 | IndexedDB | Audio file storage |
-| localStorage | Metadata persistence |
+| localStorage | Metadata, lyrics, cookies, and URL cache |
+| NeteaseCloudMusicApi | Local Netease Cloud Music API service |
+| youtubei.js | Reserved YouTube dependency, not yet integrated |
+| music-metadata | Audio metadata parsing |
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
-├── main.tsx                # Entry point
-├── App.tsx                 # Main layout + view routing + shortcuts
-├── App.css                 # All styles (Spotify dark theme)
-├── types.ts                # TypeScript type definitions
-├── data.ts                 # Gradient color presets
-├── lib/db.ts               # IndexedDB + localStorage persistence
-├── hooks/                  # Custom hooks
-├── context/                # Global state management (PlayerContext)
-└── components/             # UI components
+├── main.tsx                  # Entry point
+├── App.tsx                   # Main layout + view routing + shortcuts
+├── App.css                   # All styles
+├── types.ts                  # TypeScript type definitions
+├── data.ts                   # Gradient presets
+├── electron.d.ts             # Electron API declarations
+├── lib/
+│   ├── db.ts                 # IndexedDB + localStorage persistence
+│   ├── metadata.ts           # Local audio metadata parser
+│   ├── neteaseApi.ts         # Netease API wrapper
+│   ├── lyrics.ts             # LRC parser
+│   ├── share.ts              # Share card generation
+│   └── sources/              # Music source abstraction
+├── i18n/                     # Translations
+├── context/                  # Global state management
+├── hooks/                    # Custom hooks
+└── components/
     ├── Sidebar.tsx
     ├── PlayerBar.tsx
     ├── NowPlayingView.tsx
-    ├── HomeView.tsx
+    ├── DiscoverView.tsx
     ├── SearchView.tsx
     ├── LibraryView.tsx
     ├── PlaylistDetail.tsx
+    ├── LyricsView.tsx
+    ├── QueueView.tsx
+    ├── HistoryView.tsx
+    ├── AlbumListView.tsx
+    ├── SettingsView.tsx
     └── CreatePlaylistModal.tsx
 ```
 
-## 🔑 Keyboard Shortcuts
+## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
@@ -108,7 +131,7 @@ src/
 | `S` | Toggle shuffle |
 | `R` | Toggle repeat mode |
 
-## 🤖 AI Development Experience
+## AI Development Experience
 
 This project was entirely generated by **DeepSeek V4 Flash** through conversational interaction. Here's a summary of the collaborative process.
 

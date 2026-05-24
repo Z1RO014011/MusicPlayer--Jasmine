@@ -160,13 +160,13 @@
 
 ---
 
-## v2.0 — 多音源架构 & YouTube 支持（2026-05-18）
+## v2.0 — 多音源架构 & 桌面发布（2026-05-18）
 
 ### 多音源抽象层
 - 抽象 MusicSource 接口，支持多种音乐源接入
 - 网易云音源实现（NeteaseMusicApi）
-- YouTube 音源实现（youtubei.js），作为备选音源
-- 音源注册与切换机制
+- YouTube 音源依赖已加入，后续版本接入 UI 与音源注册
+- 音源注册表已建立，当前默认使用网易云音源
 
 ### 桌面应用增强
 - Electron preload 脚本，安全暴露 API 到渲染进程
@@ -192,7 +192,7 @@
 | localStorage | 元数据 + 歌词 + 音频URL缓存 + Cookie |
 | NeteaseCloudMusicApi | 网易云音乐 API 本地服务 |
 | music-metadata | 音频文件元数据解析 |
-| youtubei.js | YouTube 音源（备用） |
+| youtubei.js | YouTube 音源依赖（待接入） |
 
 ### 项目结构
 
@@ -230,8 +230,8 @@ src/
     ├── LyricsView.tsx        # 歌词显示组件
     ├── DiscoverView.tsx      # 发现页（在线搜索/推荐/排行榜）
     ├── AlbumListView.tsx     # 收藏专辑视图（已内嵌至 LibraryView）
+    ├── HistoryView.tsx       # 播放历史
     ├── SettingsView.tsx      # 设置页
     ├── QueueView.tsx         # 播放队列
-    ├── CreatePlaylistModal.tsx
-    └── ShareCard.tsx         # 分享卡片生成
+    └── CreatePlaylistModal.tsx
 ```

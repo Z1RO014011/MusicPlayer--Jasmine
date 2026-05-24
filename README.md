@@ -8,7 +8,7 @@
 
 - **在线音乐** — 网易云音乐集成，在线搜索歌曲/歌单/艺人/专辑，扫码登录获取高音质
 - **发现页** — 热门搜索、个性化推荐、排行榜浏览
-- **多音源** — 抽象音源层，支持网易云 + YouTube 双音源切换
+- **音源抽象** — 已抽象 MusicSource 接口，当前注册网易云音源；YouTube 依赖已预留但尚未接入 UI/注册表
 - **本地音乐** — 多文件导入，自动读取元数据，IndexedDB 持久化存储
 - **歌词显示** — Apple Music 风格 LRC 歌词滚动同步，支持编辑歌词
 - **歌单管理** — 创建/删除/重命名歌单，自定义封面（上传图片或渐变色）
@@ -27,7 +27,15 @@ npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:5173/music-player/`。
+浏览器打开 `http://127.0.0.1:5173/music-player/`。
+
+如果需要在浏览器里调试在线搜索、扫码登录、歌词和在线播放，使用：
+
+```bash
+npm run dev:online
+```
+
+> `npm run dev` 只启动前端；`npm run dev:online` 会同时启动前端和本地网易云 API 服务。桌面模式会自动启动该服务。
 
 ### 桌面应用（下载安装包）
 
@@ -70,7 +78,7 @@ npm run electron:build:all    # 全平台
 | IndexedDB | 音频文件存储 |
 | localStorage | 元数据 + 歌词 + 缓存 |
 | NeteaseCloudMusicApi | 网易云音乐 API |
-| youtubei.js | YouTube 音源（备用） |
+| youtubei.js | YouTube 音源依赖（待接入） |
 | music-metadata | 音频元数据解析 |
 
 ## 项目结构
@@ -103,7 +111,8 @@ src/
     ├── QueueView.tsx
     ├── HistoryView.tsx
     ├── AlbumListView.tsx
-    └── ShareCard.tsx
+    ├── SettingsView.tsx
+    └── CreatePlaylistModal.tsx
 ```
 
 ## 快捷键

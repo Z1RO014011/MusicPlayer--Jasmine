@@ -4,3 +4,4 @@ dist/
 *.log
 tsconfig.tsbuildinfo
 release/
+release-v2.0.0/

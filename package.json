@@ -7,11 +7,13 @@
   "author": "Z1RO014011 <zhr014011@outlook.com>",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 127.0.0.1",
+    "api:dev": "node scripts/start-ncm-api.cjs",
+    "dev:online": "concurrently -k \"vite --host 127.0.0.1\" \"node scripts/start-ncm-api.cjs\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist",
-    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
     "electron:build": "ELECTRON=true vite build && electron-builder",
     "electron:build:all": "ELECTRON=true vite build && electron-builder --mac --win --linux"
   },
