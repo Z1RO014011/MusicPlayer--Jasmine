@@ -7,7 +7,7 @@ interface QueueViewProps {
 }
 
 export function QueueView({ onBack }: QueueViewProps) {
-  const { state, playSong, removeFromQueue } = usePlayer();
+  const { state, playSong, removeFromQueue, clearQueue } = usePlayer();
   const { t } = useI18n();
   const { queue, queueIndex } = state;
 
@@ -26,6 +26,11 @@ export function QueueView({ onBack }: QueueViewProps) {
           <h2>{t('queue.title')}</h2>
           <p className="queue-subtitle">{t('queue.count', { count: queue.length })}</p>
         </div>
+        {queue.length > 1 && (
+          <button className="queue-clear-btn" onClick={clearQueue}>
+            {t('queue.clear')}
+          </button>
+        )}
       </div>
 
       {queue.length === 0 ? (

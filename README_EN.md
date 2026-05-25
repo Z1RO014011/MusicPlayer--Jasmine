@@ -18,7 +18,7 @@ A full-featured desktop music player built with **Vite + React 18 + TypeScript +
 - **Internationalization** — Chinese and English UI
 - **Song Sharing** — Generate beautiful share cards, download as PNG
 - **Keyboard Shortcuts** — Space / → / ← / ↑ / ↓ / S / R / Shift+→ / Shift+←
-- **Dark Theme** — Spotify-style dark UI
+- **Dark Theme** — Jasmine's own dark glass UI
 
 ## Quick Start
 
@@ -29,13 +29,15 @@ npm run dev
 
 Open `http://127.0.0.1:5173/music-player/` in your browser.
 
-For browser-based debugging of online search, QR login, lyrics, and streaming, use:
+`npm run dev` starts both the frontend and the local Netease API service, so online search, QR login, lyrics, and streaming work out of the box.
+
+If you only need the frontend UI, use:
 
 ```bash
-npm run dev:online
+npm run dev:frontend
 ```
 
-> `npm run dev` starts only the frontend. `npm run dev:online` starts both the frontend and the local Netease API service. Electron mode starts that service automatically.
+> Online features depend on the local Netease API service at `http://127.0.0.1:3000`. Electron mode starts that service automatically.
 
 ### Desktop App (Download Installer)
 

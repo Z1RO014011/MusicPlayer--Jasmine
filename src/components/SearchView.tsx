@@ -81,7 +81,7 @@ export function SearchView({ onSelectPlaylist }: SearchViewProps) {
               <h2 className="section-title">{t('search.songs')}</h2>
               <div className="search-song-list">
                 {results.songs.map((song, idx) => (
-                  <div key={song.id} className="track-row" onClick={() => playSong(song)}>
+                  <div key={song.id} className="track-row" onClick={() => playSong(song, results.songs)}>
                     <span className="track-col-num">{idx + 1}</span>
                     <span className="track-col-title">
                       <div className="track-cover-mini" style={{ background: song.coverColor }} />

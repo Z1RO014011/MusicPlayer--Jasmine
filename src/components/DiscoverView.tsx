@@ -15,7 +15,7 @@ interface SubView {
 
 export function DiscoverView() {
   const { t } = useI18n();
-  const { playSong, userSongs, addToQueue, isAlbumSaved, toggleAlbum, toggleLike, isLiked } = usePlayer();
+  const { playSong, userSongs, addToQueue, playNext, isAlbumSaved, toggleAlbum, toggleLike, isLiked } = usePlayer();
   const source = defaultSource;
 
   const [tab, setTab] = useState<DiscoverTab>('search');
@@ -25,6 +25,7 @@ export function DiscoverView() {
   const [searchAlbumsList, setSearchAlbumsList] = useState<NeteaseAlbum[]>([]);
   const [resultType, setResultType] = useState<'songs' | 'artists' | 'albums' | 'playlists'>('songs');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [topPlaylists, setTopPlaylists] = useState<Playlist[]>([]);
   const [charts, setCharts] = useState<{ name: string; id: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,21 +91,27 @@ export function DiscoverView() {
 
   // Debounced search
   const doSearch = useCallback((keywords: string) => {
-    if (!keywords.trim()) { setSearchResults(null); return; }
+    if (!keywords.trim()) { setSearchResults(null); setSearchError(''); return; }
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setSearchLoading(true);
+    setSearchError('');
     // Clear cached artists/albums, reset to songs tab
     setSearchArtistsList([]);
     setSearchAlbumsList([]);
     setResultType('songs');
     searchOnline(keywords, 30).then(res => {
       if (!ctrl.signal.aborted) setSearchResults(res);
-    }).catch(() => {}).finally(() => {
+    }).catch(() => {
+      if (!ctrl.signal.aborted) {
+        setSearchResults(null);
+        setSearchError(t('discover.searchServiceError'));
+      }
+    }).finally(() => {
       if (!ctrl.signal.aborted) setSearchLoading(false);
     });
-  }, []);
+  }, [t]);
 
   const handleSearchInput = (v: string) => {
     setQuery(v);
@@ -240,8 +247,8 @@ export function DiscoverView() {
 
   const fmtTime = (d: number) => `${Math.floor(d / 60)}:${String(Math.floor(d % 60)).padStart(2, '0')}`;
 
-  const renderSongRow = (song: Song, i: number) => (
-    <div key={song.id} className="track-row" onClick={() => handlePlayOnlineSong(song)}>
+  const renderSongRow = (song: Song, i: number, context?: Song[]) => (
+    <div key={song.id} className="track-row" onClick={() => handlePlayOnlineSong(song, context)}>
       <span className="track-col-num">{i + 1}</span>
       <span className="track-col-title">
         <div className="track-cover-mini" style={{ background: song.coverColor }} />
@@ -265,6 +272,9 @@ export function DiscoverView() {
       </span>
       <span className="track-col-duration">{fmtTime(song.duration)}</span>
       <span className="track-col-action">
+        <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); playNext(song); }} title={t('discover.playNext')}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l8-7-8-7zm9 0h2v14h-2V5z"/></svg>
+        </button>
         <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); addToQueue(song); }} title={t('discover.addToQueue')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
         </button>
@@ -347,6 +357,9 @@ export function DiscoverView() {
               </span>
               <span className="track-col-duration">{fmtTime(s.duration)}</span>
               <span className="track-col-action">
+                <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); playNext(s); }} title={t('discover.playNext')}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l8-7-8-7zm9 0h2v14h-2V5z"/></svg>
+                </button>
                 <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); addToQueue(s); }} title={t('discover.addToQueue')}>
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
                 </button>
@@ -397,9 +410,12 @@ export function DiscoverView() {
           <div className="search-bar">
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.057l4.42 4.42a1 1 0 101.415-1.414l-4.42-4.42a9.18 9.18 0 002.092-5.808c0-5.14-4.226-9.28-9.414-9.28zm0 2c4.115 0 7.407 3.274 7.407 7.279 0 4.005-3.292 7.279-7.407 7.279-4.115 0-7.407-3.274-7.407-7.279 0-4.005 3.292-7.279 7.407-7.279z"/></svg>
             <input type="text" placeholder={t('discover.searchPlaceholder')} value={query} onChange={e => handleSearchInput(e.target.value)} className="search-input" autoFocus />
-            {query && <button className="search-clear" onClick={() => { setQuery(''); setSearchResults(null); }}><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3.293 3.293a1 1 0 011.414 0L12 10.586l7.293-7.293a1 1 0 111.414 1.414L13.414 12l7.293 7.293a1 1 0 01-1.414 1.414L12 13.414l-7.293 7.293a1 1 0 01-1.414-1.414L10.586 12 3.293 4.707a1 1 0 010-1.414z"/></svg></button>}
+            {query && <button className="search-clear" onClick={() => { setQuery(''); setSearchResults(null); setSearchError(''); }}><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3.293 3.293a1 1 0 011.414 0L12 10.586l7.293-7.293a1 1 0 111.414 1.414L13.414 12l7.293 7.293a1 1 0 01-1.414 1.414L12 13.414l-7.293 7.293a1 1 0 01-1.414-1.414L10.586 12 3.293 4.707a1 1 0 010-1.414z"/></svg></button>}
           </div>
           {searchLoading ? <div className="discover-loading">{t('discover.loading')}</div>
+            : searchError ? (
+              <div className="search-empty"><p>{searchError}</p></div>
+            )
             : searchResults ? (
               <div className="search-results">
                 {/* Filter tabs */}
@@ -454,7 +470,7 @@ export function DiscoverView() {
                 {/* Songs tab */}
                 {resultType === 'songs' && (
                   searchResults.songs.length > 0 ? (
-                    <div className="search-song-list">{searchResults.songs.map((s, i) => renderSongRow(s, i))}</div>
+                    <div className="search-song-list">{searchResults.songs.map((s, i) => renderSongRow(s, i, searchResults.songs))}</div>
                   ) : null
                 )}
 
@@ -609,7 +625,7 @@ export function DiscoverView() {
               <div className="login-error"><p>{loginError}</p><button className="login-retry-btn" onClick={startLogin}>{t('login.retry')}</button></div>
             ) : loginStatus.code === 803 ? (
               <div className="login-success">
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="#1ed760"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--accent)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 <p>{t('login.success')}</p>
               </div>
             ) : (

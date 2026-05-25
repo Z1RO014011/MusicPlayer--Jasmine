@@ -155,6 +155,7 @@ const zh: TranslationMap = {
   'discover.searchPlaylists': '歌单',
   'discover.searchHint': '搜索你想听的音乐',
   'discover.searchHintDesc': '在上方搜索框中输入歌名、艺术家来搜索海量在线音乐',
+  'discover.searchServiceError': '在线音乐服务连接失败。请确认本地网易云 API 服务已启动，开发模式建议使用 npm run dev。',
   'discover.hotSearch': '热门搜索',
   'discover.browseAll': '浏览全部',
   'discover.chooseCategory': '选择分类',
@@ -165,6 +166,7 @@ const zh: TranslationMap = {
   'discover.download': '下载到本地',
   'discover.downloading': '下载中...',
   'discover.downloaded': '已下载',
+  'discover.playNext': '下一首播放',
   'discover.addToQueue': '添加到队列',
   'discover.addToPlaylist': '添加到歌单',
   'discover.noPlaylist': '还没有歌单，请先在侧边栏创建一个',
@@ -194,6 +196,7 @@ const zh: TranslationMap = {
   'queue.title': '播放队列',
   'queue.count': '{count} 首歌曲',
   'queue.nowPlaying': '正在播放',
+  'queue.clear': '清空队列',
   'queue.empty': '队列为空，去发现或导入音乐吧',
 };
 
@@ -350,6 +353,7 @@ const en: TranslationMap = {
   'discover.searchPlaylists': 'Playlists',
   'discover.searchHint': 'Search your music',
   'discover.searchHintDesc': 'Enter a song name or artist above to search millions of tracks',
+  'discover.searchServiceError': 'Online music service is unavailable. Make sure the local NetEase API service is running; use npm run dev in development.',
   'discover.hotSearch': 'Hot Search',
   'discover.browseAll': 'Browse All',
   'discover.chooseCategory': 'Choose Category',
@@ -360,6 +364,7 @@ const en: TranslationMap = {
   'discover.download': 'Download to Library',
   'discover.downloading': 'Downloading...',
   'discover.downloaded': 'Downloaded',
+  'discover.playNext': 'Play Next',
   'discover.addToQueue': 'Add to Queue',
   'discover.addToPlaylist': 'Add to Playlist',
   'discover.noPlaylist': 'No playlists yet, create one in the sidebar first',
@@ -389,6 +394,7 @@ const en: TranslationMap = {
   'queue.title': 'Play Queue',
   'queue.count': '{count} songs',
   'queue.nowPlaying': 'Now Playing',
+  'queue.clear': 'Clear Queue',
   'queue.empty': 'Queue is empty, discover or import some music',
 };
 

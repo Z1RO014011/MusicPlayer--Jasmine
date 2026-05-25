@@ -7,9 +7,11 @@ import type {
   NeteaseSongUrlResponse,
 } from '../types/netease';
 
-function getBaseURL(): string {
-  const port = window.electronAPI?.apiPort ?? 3000;
-  return `http://127.0.0.1:${port}`;
+export function getBaseURL(): string {
+  if (window.electronAPI?.apiPort) {
+    return `http://127.0.0.1:${window.electronAPI.apiPort}`;
+  }
+  return '/api';
 }
 
 function mapNeteaseSong(item: NeteaseSongItem): Song {

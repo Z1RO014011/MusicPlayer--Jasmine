@@ -3,11 +3,12 @@ import { PlayerState, Song, Playlist, LyricLine, SavedAlbum } from '../types';
 import { gradientColors } from '../data';
 import { saveAudioFile, saveAudioData, loadAudioFile, deleteAudioFile, saveSongs, loadSongs, savePlaylists, loadPlaylists, saveAlbums, loadAlbums, savePlayHistory, loadPlayHistory, type PlayRecord } from '../lib/db';
 import { extractMetadata } from '../lib/metadata';
-import { getLoginCookie, getLyrics } from '../lib/neteaseApi';
+import { getBaseURL, getLoginCookie, getLyrics } from '../lib/neteaseApi';
 import { useI18n } from '../i18n/I18nContext';
 
 type PlayerAction =
   | { type: 'PLAY_SONG'; song: Song; playlist?: Playlist; queue?: Song[] }
+  | { type: 'RESTORE_PLAYBACK_STATE'; state: Partial<PlayerState> }
   | { type: 'TOGGLE_PLAY' }
   | { type: 'SET_PLAYING'; isPlaying: boolean }
   | { type: 'SET_CURRENT_TIME'; time: number }
@@ -20,7 +21,9 @@ type PlayerAction =
   | { type: 'SET_QUEUE'; songs: Song[]; index: number }
   | { type: 'SEEK'; time: number }
   | { type: 'ADD_TO_QUEUE'; song: Song }
+  | { type: 'PLAY_NEXT'; song: Song }
   | { type: 'REMOVE_FROM_QUEUE'; index: number }
+  | { type: 'CLEAR_QUEUE' }
   | { type: 'SET_SONG_LYRICS'; lyrics: LyricLine[] };
 
 const initialState: PlayerState = {
@@ -35,8 +38,75 @@ const initialState: PlayerState = {
   queueIndex: -1,
 };
 
+const PLAYBACK_STATE_KEY = 'mp-playback-state';
+
+interface PersistedPlaybackState {
+  currentSong: Song | null;
+  currentTime: number;
+  volume: number;
+  isShuffled: boolean;
+  repeatMode: PlayerState['repeatMode'];
+  queue: Song[];
+  queueIndex: number;
+  savedAt: number;
+}
+
+function persistableSong(song: Song): Song {
+  return {
+    ...song,
+    audioUrl: song.source === 'online' ? undefined : song.audioUrl,
+  };
+}
+
+function savePlaybackState(state: PlayerState) {
+  try {
+    const data: PersistedPlaybackState = {
+      currentSong: state.currentSong ? persistableSong(state.currentSong) : null,
+      currentTime: state.currentTime,
+      volume: state.volume,
+      isShuffled: state.isShuffled,
+      repeatMode: state.repeatMode,
+      queue: state.queue.map(persistableSong),
+      queueIndex: state.queueIndex,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(PLAYBACK_STATE_KEY, JSON.stringify(data));
+  } catch {}
+}
+
+function loadPlaybackState(): PersistedPlaybackState | null {
+  try {
+    const raw = localStorage.getItem(PLAYBACK_STATE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getNextQueueIndex(state: PlayerState): number {
+  const { queue, queueIndex, repeatMode, isShuffled } = state;
+  if (queue.length === 0) return -1;
+  if (repeatMode === 'one') return queueIndex >= 0 ? queueIndex : 0;
+  if (isShuffled && queue.length > 1) {
+    let nextIndex = queueIndex;
+    while (nextIndex === queueIndex) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    }
+    return nextIndex;
+  }
+  const nextIndex = queueIndex + 1;
+  if (nextIndex < queue.length) return nextIndex;
+  return repeatMode === 'all' ? 0 : -1;
+}
+
 function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
   switch (action.type) {
+    case 'RESTORE_PLAYBACK_STATE':
+      return {
+        ...state,
+        ...action.state,
+        isPlaying: false,
+      };
     case 'PLAY_SONG': {
       const explicitQueue = action.queue
         || (action.playlist ? action.playlist.songs : undefined);
@@ -44,9 +114,9 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
         const idx = explicitQueue.findIndex(s => s.id === action.song.id);
         return { ...state, currentSong: action.song, queue: explicitQueue, queueIndex: idx >= 0 ? idx : 0, isPlaying: true, currentTime: 0 };
       }
-      // No explicit queue: keep existing, just update song and index
-      const idx = state.queue.findIndex(s => s.id === action.song.id);
-      return { ...state, currentSong: action.song, queueIndex: idx >= 0 ? idx : state.queueIndex, isPlaying: true, currentTime: 0 };
+      // No explicit queue means the user intentionally picked a standalone song.
+      // Resetting to a singleton queue prevents "Next" from jumping back into an old playlist.
+      return { ...state, currentSong: action.song, queue: [action.song], queueIndex: 0, isPlaying: true, currentTime: 0 };
     }
     case 'TOGGLE_PLAY':
       return { ...state, isPlaying: !state.isPlaying };
@@ -59,21 +129,10 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
     case 'SET_VOLUME':
       return { ...state, volume: Math.max(0, Math.min(1, action.volume)) };
     case 'NEXT': {
-      const { queue, queueIndex, repeatMode } = state;
+      const { queue } = state;
       if (queue.length === 0) return state;
-      let nextIndex: number;
-      if (repeatMode === 'one') {
-        nextIndex = queueIndex;
-      } else {
-        nextIndex = queueIndex + 1;
-        if (nextIndex >= queue.length) {
-          if (repeatMode === 'all') {
-            nextIndex = 0;
-          } else {
-            return { ...state, isPlaying: false };
-          }
-        }
-      }
+      const nextIndex = getNextQueueIndex(state);
+      if (nextIndex < 0) return { ...state, isPlaying: false };
       const nextSong = queue[nextIndex];
       return { ...state, currentSong: nextSong, queueIndex: nextIndex, isPlaying: true, currentTime: 0 };
     }
@@ -112,6 +171,14 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
       return { ...state, currentTime: action.time };
     case 'ADD_TO_QUEUE':
       return { ...state, queue: [...state.queue, action.song] };
+    case 'PLAY_NEXT': {
+      if (!state.currentSong || state.queueIndex < 0 || state.queue.length === 0) {
+        return { ...state, currentSong: action.song, queue: [action.song], queueIndex: 0, isPlaying: true, currentTime: 0 };
+      }
+      const q = [...state.queue];
+      q.splice(state.queueIndex + 1, 0, action.song);
+      return { ...state, queue: q };
+    }
     case 'REMOVE_FROM_QUEUE': {
       const q = [...state.queue];
       q.splice(action.index, 1);
@@ -127,6 +194,12 @@ function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
       }
       return { ...state, queue: q, queueIndex: newIdx, currentSong: q[newIdx] || null };
     }
+    case 'CLEAR_QUEUE':
+      return {
+        ...state,
+        queue: state.currentSong ? [state.currentSong] : [],
+        queueIndex: state.currentSong ? 0 : -1,
+      };
     case 'SET_SONG_LYRICS':
       return state.currentSong
         ? { ...state, currentSong: { ...state.currentSong, lyrics: action.lyrics } }
@@ -168,7 +241,9 @@ interface PlayerContextType {
   removeSongFromPlaylist: (playlistId: string, songId: string) => void;
 
   addToQueue: (song: Song) => void;
+  playNext: (song: Song) => void;
   removeFromQueue: (index: number) => void;
+  clearQueue: () => void;
   likedPlaylist: Playlist | undefined;
   isLiked: (songId: string) => boolean;
   toggleLike: (song: Song) => void;
@@ -195,6 +270,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stateRef = useRef(state);
   const loadedRef = useRef(false);
+  const dataLoadedRef = useRef(false);
   stateRef.current = state;
 
   // Load persisted data on mount
@@ -279,6 +355,29 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       // Load play history
       setPlayHistory(loadPlayHistory());
 
+      const savedPlayback = loadPlaybackState();
+      if (savedPlayback) {
+        const resolveSong = (song: Song) => restoredPlaylistSongs.get(song.id) || song;
+        const queue = savedPlayback.queue.map(resolveSong);
+        const currentSong = savedPlayback.currentSong ? resolveSong(savedPlayback.currentSong) : null;
+        const queueIndex = currentSong
+          ? Math.max(0, queue.findIndex(s => s.id === currentSong.id))
+          : -1;
+        dispatch({
+          type: 'RESTORE_PLAYBACK_STATE',
+          state: {
+            currentSong,
+            currentTime: savedPlayback.currentTime || 0,
+            duration: currentSong?.duration || 0,
+            volume: savedPlayback.volume ?? initialState.volume,
+            isShuffled: Boolean(savedPlayback.isShuffled),
+            repeatMode: savedPlayback.repeatMode || 'off',
+            queue: queue.length > 0 ? queue : (currentSong ? [currentSong] : []),
+            queueIndex: queueIndex >= 0 ? queueIndex : (currentSong ? 0 : -1),
+          },
+        });
+      }
+
       setUserPlaylists(pls);
       setUserSongs(songs);
       // Re-save songs to ensure mp-songs is always in sync
@@ -316,6 +415,59 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    dataLoadedRef.current = loaded;
+  }, [loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    savePlaybackState(state);
+  }, [
+    loaded,
+    state.currentSong?.id,
+    state.volume,
+    state.isShuffled,
+    state.repeatMode,
+    state.queue,
+    state.queueIndex,
+  ]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const interval = window.setInterval(() => savePlaybackState(stateRef.current), 2000);
+    return () => window.clearInterval(interval);
+  }, [loaded]);
+
+  useEffect(() => {
+    const saveNow = () => {
+      if (dataLoadedRef.current) savePlaybackState(stateRef.current);
+    };
+    window.addEventListener('beforeunload', saveNow);
+    return () => {
+      window.removeEventListener('beforeunload', saveNow);
+      saveNow();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || state.isPlaying || !state.currentSong?.audioUrl) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.src !== state.currentSong.audioUrl) {
+      audio.src = state.currentSong.audioUrl;
+      audio.load();
+    }
+    const restoreTime = Math.max(0, state.currentTime || 0);
+    const seekWhenReady = () => {
+      if (Number.isFinite(audio.duration) && restoreTime < audio.duration) {
+        audio.currentTime = restoreTime;
+      }
+    };
+    if (audio.readyState >= 1) seekWhenReady();
+    else audio.addEventListener('loadedmetadata', seekWhenReady, { once: true });
+    return () => audio.removeEventListener('loadedmetadata', seekWhenReady);
+  }, [loaded, state.currentSong?.id]);
+
+  useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -328,24 +480,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const s = stateRef.current;
       const playerAudio = audioRef.current;
       if (s.queue.length === 0) return;
-      let nextIndex: number;
-      if (s.repeatMode === 'one') {
-        nextIndex = s.queueIndex;
-      } else {
-        nextIndex = s.queueIndex + 1;
-        if (nextIndex >= s.queue.length) {
-          if (s.repeatMode === 'all') {
-            nextIndex = 0;
-          } else {
-            dispatch({ type: 'SET_PLAYING', isPlaying: false });
-            if (playerAudio) playerAudio.pause();
-            return;
-          }
-        }
+      const nextIndex = getNextQueueIndex(s);
+      if (nextIndex < 0) {
+        dispatch({ type: 'SET_PLAYING', isPlaying: false });
+        if (playerAudio) playerAudio.pause();
+        return;
       }
       const nextSong = s.queue[nextIndex];
       if (nextSong && playerAudio) {
-        dispatch({ type: 'PLAY_SONG', song: nextSong });
+        dispatch({ type: 'PLAY_SONG', song: nextSong, queue: s.queue });
         if (nextSong.audioUrl) {
           if (playerAudio.src !== nextSong.audioUrl) {
             playerAudio.src = nextSong.audioUrl;
@@ -357,7 +500,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           // Lazy-fetch online song URL
           const cookie = getLoginCookie();
           const cookieParam = cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
-          fetch(`http://127.0.0.1:3000/song/url?id=${nextSong.neteaseId}&level=standard${cookieParam}`)
+          fetch(`${getBaseURL()}/song/url?id=${nextSong.neteaseId}&level=standard${cookieParam}`)
             .then(r => r.json())
             .then(json => {
               const url = json.data?.[0]?.url || undefined;
@@ -395,7 +538,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (audio) audio.volume = state.volume;
   }, [state.volume]);
 
-  async function initAudio(song: Song) {
+  async function initAudio(song: Song, startTime = 0) {
     const audio = audioRef.current;
     if (!audio) return;
     let url = song.audioUrl;
@@ -404,7 +547,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const cookie = getLoginCookie();
       const cookieParam = cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
       try {
-        const res = await fetch(`http://127.0.0.1:3000/song/url?id=${song.neteaseId}&level=standard${cookieParam}`);
+        const res = await fetch(`${getBaseURL()}/song/url?id=${song.neteaseId}&level=standard${cookieParam}`);
         const json = await res.json();
         url = json.data?.[0]?.url || undefined;
         if (url) song.audioUrl = url;
@@ -414,6 +557,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (audio.src !== url) {
       audio.src = url;
       audio.load();
+    }
+    if (startTime > 0) {
+      const seek = () => {
+        if (Number.isFinite(audio.duration) && startTime < audio.duration) {
+          audio.currentTime = startTime;
+        }
+      };
+      if (audio.readyState >= 1) seek();
+      else audio.addEventListener('loadedmetadata', seek, { once: true });
     }
     audio.play().catch(() => {});
     prefetchNextUrl();
@@ -448,6 +600,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const audio = audioRef.current;
     if (!audio) return;
     if (audio.paused) {
+      const currentSong = stateRef.current.currentSong;
+      if ((!audio.src || audio.src === window.location.href) && currentSong) {
+        initAudio(currentSong, stateRef.current.currentTime);
+        return;
+      }
       audio.play().catch(() => {});
     } else {
       audio.pause();
@@ -459,13 +616,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   function prefetchNextUrl() {
     const s = stateRef.current;
     if (s.queue.length <= 1) return;
-    let nextIdx = s.queueIndex + 1;
-    if (nextIdx >= s.queue.length) nextIdx = 0;
+    const nextIdx = getNextQueueIndex(s);
+    if (nextIdx < 0) return;
     const nextSong = s.queue[nextIdx];
     if (nextSong && nextSong.source === 'online' && nextSong.neteaseId && !nextSong.audioUrl) {
       const cookie = getLoginCookie();
       const cookieParam = cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
-      fetch(`http://127.0.0.1:3000/song/url?id=${nextSong.neteaseId}&level=standard${cookieParam}`)
+      fetch(`${getBaseURL()}/song/url?id=${nextSong.neteaseId}&level=standard${cookieParam}`)
         .then(r => r.json())
         .then(json => {
           const url = json.data?.[0]?.url || undefined;
@@ -477,8 +634,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // Lazy-fetch lyrics for online songs missing them
   function fetchLyricsForSong(song: Song) {
     if (song.lyrics || !song.neteaseId) return;
-    const port = window.electronAPI?.apiPort ?? 3000;
-    fetch(`http://127.0.0.1:${port}/lyric?id=${song.neteaseId}`)
+    fetch(`${getBaseURL()}/lyric?id=${song.neteaseId}`)
       .then(r => r.json())
       .then(json => {
         const lrcText = json.lrc?.lyric || json.tlyric?.lyric;
@@ -495,7 +651,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const switchToSong = useCallback((song: Song | undefined, audio: HTMLAudioElement | null) => {
     if (!song || !audio) return;
     const sameTrack = stateRef.current.currentSong?.id === song.id;
-    dispatch({ type: 'PLAY_SONG', song: song });
+    const currentQueue = stateRef.current.queue;
+    const queueContext = currentQueue.some(s => s.id === song.id) ? currentQueue : undefined;
+    dispatch({ type: 'PLAY_SONG', song: song, queue: queueContext });
     if (sameTrack) {
       // Same track: just seek to 0, keep playing
       audio.currentTime = 0;
@@ -515,7 +673,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (song.source === 'online' && song.neteaseId) {
       const cookie = getLoginCookie();
       const cookieParam = cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
-      fetch(`http://127.0.0.1:3000/song/url?id=${song.neteaseId}&level=standard${cookieParam}`)
+      fetch(`${getBaseURL()}/song/url?id=${song.neteaseId}&level=standard${cookieParam}`)
         .then(r => r.json())
         .then(json => {
           const url = json.data?.[0]?.url || undefined;
@@ -535,16 +693,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const nextTrack = useCallback(() => {
     const audio = audioRef.current;
-    const { queue, queueIndex, repeatMode } = state;
+    const { queue } = state;
     if (queue.length === 0) return;
-    let nextIndex = queueIndex + 1;
-    if (repeatMode === 'one') {
-      nextIndex = queueIndex;
-    } else if (nextIndex >= queue.length) {
-      nextIndex = repeatMode === 'all' ? 0 : queueIndex;
+    const nextIndex = getNextQueueIndex(state);
+    if (nextIndex < 0) {
+      audio?.pause();
+      dispatch({ type: 'SET_PLAYING', isPlaying: false });
+      return;
     }
     switchToSong(queue[nextIndex], audio);
-  }, [state.queue, state.queueIndex, state.repeatMode, switchToSong]);
+  }, [state, switchToSong]);
 
   const prevTrack = useCallback(() => {
     const audio = audioRef.current;
@@ -693,8 +851,31 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'ADD_TO_QUEUE', song });
   }, []);
 
+  const playNext = useCallback((song: Song) => {
+    dispatch({ type: 'PLAY_NEXT', song });
+  }, []);
+
   const removeFromQueue = useCallback((index: number) => {
+    const s = stateRef.current;
+    const nextQueue = [...s.queue];
+    nextQueue.splice(index, 1);
+    const removingCurrent = index === s.queueIndex;
+    const replacement = removingCurrent && nextQueue.length > 0
+      ? nextQueue[Math.min(index, nextQueue.length - 1)]
+      : null;
     dispatch({ type: 'REMOVE_FROM_QUEUE', index });
+    if (!removingCurrent) return;
+    const audio = audioRef.current;
+    if (replacement) {
+      initAudio(replacement);
+    } else if (audio) {
+      audio.pause();
+      audio.src = '';
+    }
+  }, []);
+
+  const clearQueue = useCallback(() => {
+    dispatch({ type: 'CLEAR_QUEUE' });
   }, []);
 
   const toggleLike = useCallback((song: Song) => {
@@ -838,7 +1019,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       userSongs, userPlaylists,
       importFiles, deleteSong, createPlaylist, deletePlaylist,
       renamePlaylist, addSongsToPlaylist, removeSongFromPlaylist,
-      addToQueue, removeFromQueue,
+      addToQueue, playNext, removeFromQueue, clearQueue,
       likedPlaylist, isLiked, toggleLike, savedAlbums, isAlbumSaved, toggleAlbum, removeSavedAlbum,
       updateSongLyrics, updatePlaylistCover,
       downloadOnlineSong,
