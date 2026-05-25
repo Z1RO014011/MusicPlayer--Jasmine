@@ -20,6 +20,7 @@ function mapNeteaseSong(item: NeteaseSongItem): Song {
     neteaseId: item.id,
     title: item.name,
     artist: (item.ar || []).map(a => a.name).join(' / '),
+    artists: (item.ar || []).map(a => ({ id: a.id, name: a.name })),
     album: item.al?.name ?? '',
     duration: Math.floor((item.dt || 0) / 1000),
     coverColor: item.al?.picUrl

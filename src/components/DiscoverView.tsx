@@ -13,7 +13,17 @@ interface SubView {
   name: string;
 }
 
-export function DiscoverView() {
+interface ArtistOpenRequest {
+  id?: number;
+  name: string;
+  nonce: number;
+}
+
+interface DiscoverViewProps {
+  artistOpenRequest?: ArtistOpenRequest | null;
+}
+
+export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
   const { t } = useI18n();
   const { playSong, userSongs, addToQueue, playNext, isAlbumSaved, toggleAlbum, toggleLike, isLiked } = usePlayer();
   const source = defaultSource;
@@ -164,6 +174,39 @@ export function DiscoverView() {
     setShowLogin(true);
     startLogin();
   };
+
+  const openArtistDetail = useCallback(async (artist: { id?: number; name: string; picUrl?: string }) => {
+    setTab('search');
+    setSubView({ type: 'playlist', id: artist.id ? String(artist.id) : artist.name, name: artist.name });
+    setSubViewLoading(true);
+    setSubViewPlaylist(null);
+    try {
+      let resolved = artist;
+      if (!resolved.id) {
+        const matches = await searchArtists(artist.name);
+        resolved = matches.find(a => a.name === artist.name) || matches[0] || artist;
+      }
+      if (!resolved.id) throw new Error('Artist not found');
+      const songs = await getArtistSongs(resolved.id);
+      setSubViewPlaylist({
+        id: `artist-${resolved.id}`,
+        name: resolved.name,
+        description: '',
+        coverColor: resolved.picUrl ? `url(${resolved.picUrl}) center/cover no-repeat` : 'linear-gradient(135deg, #667eea, #764ba2)',
+        songs,
+        createdAt: Date.now(),
+      });
+    } catch {
+      setSubViewPlaylist(null);
+    } finally {
+      setSubViewLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!artistOpenRequest) return;
+    openArtistDetail(artistOpenRequest);
+  }, [artistOpenRequest?.nonce, openArtistDetail]);
 
   const loadArtists = (kw: string) => { if (searchArtistsList.length === 0) searchArtists(kw).then(setSearchArtistsList).catch(() => {}); };
   const loadAlbums = (kw: string) => { if (searchAlbumsList.length === 0) searchAlbums(kw).then(setSearchAlbumsList).catch(() => {}); };
@@ -443,22 +486,7 @@ export function DiscoverView() {
                   searchArtistsList.length === 0 ? <div className="discover-loading">{t('discover.loading')}</div> :
                   <div className="artist-grid">
                     {searchArtistsList.map(a => (
-                      <div key={a.id} className="artist-card" onClick={() => {
-                        setSubView({ type: 'playlist', id: String(a.id), name: a.name });
-                        setSubViewLoading(true);
-                        setSubViewPlaylist(null);
-                        getArtistSongs(a.id).then(songs => {
-                          setSubViewPlaylist({
-                            id: `artist-${a.id}`,
-                            name: a.name,
-                            description: '',
-                            coverColor: a.picUrl ? `url(${a.picUrl}) center/cover no-repeat` : 'linear-gradient(135deg, #667eea, #764ba2)',
-                            songs,
-                            createdAt: Date.now(),
-                          });
-                          setSubViewLoading(false);
-                        }).catch(() => setSubViewLoading(false));
-                      }}>
+                      <div key={a.id} className="artist-card" onClick={() => openArtistDetail(a)}>
                         <div className="artist-card-img" style={{ background: a.picUrl ? `url(${a.picUrl}) center/cover no-repeat` : 'linear-gradient(135deg, #667eea, #764ba2)' }} />
                         <div className="artist-card-name">{a.name}</div>
                         <div className="artist-card-meta">{a.musicSize} {t('discover.songs')}</div>

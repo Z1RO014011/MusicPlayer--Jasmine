@@ -14,11 +14,18 @@ import { QueueView } from './components/QueueView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import './App.css';
 
+interface ArtistOpenRequest {
+  id?: number;
+  name: string;
+  nonce: number;
+}
+
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewType>('discover');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [prevView, setPrevView] = useState<ViewType>('discover');
+  const [artistOpenRequest, setArtistOpenRequest] = useState<ArtistOpenRequest | null>(null);
   const { userPlaylists, togglePlay, nextTrack, prevTrack, state, dispatch, audioRef } = usePlayer();
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +85,13 @@ function AppContent() {
     setCurrentView(prevView);
   }, [prevView]);
 
+  const handleOpenArtist = useCallback((artist: { id?: number; name: string }) => {
+    setArtistOpenRequest({ ...artist, nonce: Date.now() });
+    setCurrentView('discover');
+    setSelectedPlaylistId(null);
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, []);
+
   const selectedPlaylist = selectedPlaylistId
     ? userPlaylists.find(pl => pl.id === selectedPlaylistId) || null
     : null;
@@ -85,7 +99,7 @@ function AppContent() {
   function renderMainContent() {
     switch (currentView) {
       case 'nowplaying':
-        return <NowPlayingView onBack={handleCloseNowPlaying} />;
+        return <NowPlayingView onBack={handleCloseNowPlaying} onOpenArtist={handleOpenArtist} />;
       case 'home':
       case 'library':
         return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
@@ -94,7 +108,7 @@ function AppContent() {
       case 'settings':
         return <SettingsView />;
       case 'discover':
-        return <DiscoverView />;
+        return <DiscoverView artistOpenRequest={artistOpenRequest} />;
       case 'queue':
         return <QueueView onBack={() => setCurrentView(prevView)} />;
       case 'playlist':

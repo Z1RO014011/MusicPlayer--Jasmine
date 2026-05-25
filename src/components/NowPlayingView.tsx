@@ -6,9 +6,10 @@ import { generateShareCard } from '../lib/share';
 
 interface NowPlayingViewProps {
   onBack: () => void;
+  onOpenArtist?: (artist: { id?: number; name: string }) => void;
 }
 
-export function NowPlayingView({ onBack }: NowPlayingViewProps) {
+export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
   const { state, dispatch, togglePlay, nextTrack, prevTrack, audioRef, isLiked, toggleLike, updateSongLyrics } = usePlayer();
   const { t } = useI18n();
   const { currentSong, isPlaying, currentTime, duration, volume, isShuffled, repeatMode } = state;
@@ -126,6 +127,14 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
 
   // --- computed ---
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const displayedArtists = useMemo<Array<{ id?: number; name: string }>>(() => {
+    if (currentSong?.artists?.length) return currentSong.artists;
+    return (currentSong?.artist || '')
+      .split(/\s*\/\s*/)
+      .map(name => name.trim())
+      .filter(Boolean)
+      .map(name => ({ name }));
+  }, [currentSong]);
   const bgStyle = useMemo(() => {
     if (currentSong?.coverColor?.startsWith('url(')) {
       return { background: currentSong.coverColor, backgroundSize: 'cover' };
@@ -146,6 +155,27 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
 
   const lyrics = currentSong.lyrics || [];
   const hasLyrics = lyrics.length > 0;
+  const renderArtistLinks = (className: string) => (
+    <span className={className}>
+      {displayedArtists.map((artist, index) => (
+        <React.Fragment key={`${artist.id || artist.name}-${index}`}>
+          {index > 0 && <span className="artist-link-separator"> / </span>}
+          <button
+            type="button"
+            className="artist-link-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenArtist?.(artist);
+            }}
+            disabled={!onOpenArtist}
+            title={artist.name}
+          >
+            {artist.name}
+          </button>
+        </React.Fragment>
+      ))}
+    </span>
+  );
 
   return (
     <div className="nowplaying-view" style={bgStyle}>
@@ -183,7 +213,7 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
 
             <div className="np-lyrics-info" onClick={() => setShowLyrics(false)} style={{ cursor: 'pointer' }} title={t('np.clickToReturn')}>
               <div className="np-lyrics-title">{currentSong.title}</div>
-              <div className="np-lyrics-artist">{currentSong.artist}</div>
+              {renderArtistLinks('np-lyrics-artist')}
             </div>
 
             <div className="np-lyrics-controls-section">
@@ -378,7 +408,7 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
                       </svg>
                     </button>
                   </div>
-                  <p className="nowplaying-view-artist">{currentSong.artist}</p>
+                  {renderArtistLinks('nowplaying-view-artist')}
                   <p className="nowplaying-view-album">{currentSong.album}</p>
                 </div>
 
@@ -465,7 +495,7 @@ export function NowPlayingView({ onBack }: NowPlayingViewProps) {
                   </div>
                   <div className="np-meta-item">
                     <span className="np-meta-label">{t('np.artist')}</span>
-                    <span className="np-meta-value">{currentSong.artist}</span>
+                    {renderArtistLinks('np-meta-value')}
                   </div>
                   <div className="np-meta-item">
                     <span className="np-meta-label">{t('np.duration')}</span>
