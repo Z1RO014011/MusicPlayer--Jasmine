@@ -7,6 +7,13 @@ import type {
   NeteaseSongUrlResponse,
 } from '../types/netease';
 
+// ==================== Shared helpers ====================
+
+function getCookieParam(): string {
+  const cookie = getLoginCookie();
+  return cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
+}
+
 export function getBaseURL(): string {
   if (window.electronAPI?.apiPort) {
     return `http://127.0.0.1:${window.electronAPI.apiPort}`;
@@ -28,6 +35,7 @@ function mapNeteaseSong(item: NeteaseSongItem): Song {
       : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     coverUrl: item.al?.picUrl,
     source: 'online',
+    audioUrl: undefined,
   };
 }
 
@@ -129,21 +137,57 @@ export async function getAlbumDetail(id: number): Promise<Playlist> {
   };
 }
 
-export async function getPlaylistDetail(id: number): Promise<Playlist> {
-  const res = await fetch(`${getBaseURL()}/playlist/detail?id=${id}`);
-  const json: NeteasePlaylistDetailResponse = await res.json();
-  const tracks = (json.playlist?.tracks || []).map(mapNeteaseSong);
+interface PlaylistDetailOptions {
+  onPartial?: (playlist: Playlist) => void;
+}
+
+function buildNeteasePlaylist(playlist: any, songs: Song[]): Playlist {
   return {
-    id: `netease-pl-${json.playlist.id}`,
-    name: json.playlist.name,
-    description: json.playlist.description || '',
-    coverColor: json.playlist.coverImgUrl
-      ? `url(${json.playlist.coverImgUrl}) center/cover no-repeat`
+    id: `netease-pl-${playlist.id}`,
+    name: playlist.name,
+    description: playlist.description || '',
+    coverColor: playlist.coverImgUrl
+      ? `url(${playlist.coverImgUrl}) center/cover no-repeat`
       : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    songs: tracks,
+    songs,
     createdAt: Date.now(),
-    creator: json.playlist.creator?.nickname,
+    creator: playlist.creator?.nickname || '',
   };
+}
+
+export async function getPlaylistDetail(id: number, options: PlaylistDetailOptions = {}): Promise<Playlist> {
+  // Step 1: Get playlist metadata + full trackIds
+  const res = await fetch(
+    `${getBaseURL()}/playlist/detail?id=${id}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  const playlist = json?.playlist;
+  if (!playlist) throw new Error('Playlist not found');
+
+  const trackIds: number[] = (playlist.trackIds || []).map((t: any) => t.id);
+  const firstBatch = (playlist.tracks || []).map(mapNeteaseSong);
+  if (firstBatch.length > 0) {
+    options.onPartial?.(buildNeteasePlaylist(playlist, firstBatch));
+  }
+
+  // Step 2: If more than first batch, fetch remaining via /song/detail in batches
+  const BATCH = 500;
+  let allTracks = firstBatch;
+
+  if (trackIds.length > firstBatch.length) {
+    const remaining = trackIds.slice(firstBatch.length);
+    for (let i = 0; i < remaining.length; i += BATCH) {
+      const batch = remaining.slice(i, i + BATCH).join(',');
+      const songRes = await fetch(
+        `${getBaseURL()}/song/detail?ids=${batch}${getCookieParam()}`,
+      );
+      const songJson = await songRes.json();
+      const songs = (songJson?.songs || []).map(mapNeteaseSong);
+      allTracks = allTracks.concat(songs);
+    }
+  }
+
+  return buildNeteasePlaylist(playlist, allTracks);
 }
 
 let savedCookie = '';
@@ -356,7 +400,7 @@ export async function getLyrics(neteaseId: number): Promise<LyricLine[]> {
 
 // --- Login / Authentication ---
 
-function ts() { return `&timestamp=${Date.now()}`; }
+function loginTs(joiner: '?' | '&' = '&') { return `${joiner}timestamp=${Date.now()}`; }
 
 export interface LoginQR {
   key: string;
@@ -364,13 +408,14 @@ export interface LoginQR {
 }
 
 export async function createLoginQR(): Promise<LoginQR> {
-  const keyRes = await fetch(`${getBaseURL()}/login/qr/key?${ts()}`);
+  const keyRes = await fetch(`${getBaseURL()}/login/qr/key${loginTs('?')}`, { cache: 'no-store' });
   const keyData = await keyRes.json();
   const key = keyData?.data?.unikey;
   if (!key) throw new Error('Failed to get QR key');
 
   const qrRes = await fetch(
-    `${getBaseURL()}/login/qr/create?key=${key}&qrimg=true${ts()}`,
+    `${getBaseURL()}/login/qr/create?key=${key}&qrimg=true${loginTs()}`,
+    { cache: 'no-store' },
   );
   const qrData = await qrRes.json();
   return { key, qrimg: qrData?.data?.qrimg || '' };
@@ -384,7 +429,7 @@ export type LoginQRStatus =
   | { code: -1; message: 'error' };
 
 export async function checkLoginQR(key: string): Promise<LoginQRStatus> {
-  const res = await fetch(`${getBaseURL()}/login/qr/check?key=${key}${ts()}`);
+  const res = await fetch(`${getBaseURL()}/login/qr/check?key=${key}&noCookie=true${loginTs()}`, { cache: 'no-store' });
   const json = await res.json();
   const code = json.code;
 
@@ -406,7 +451,10 @@ export async function getLoginStatus(cookie?: string): Promise<LoginStatusInfo> 
   const cookieParam = cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
   for (let i = 0; i < 3; i++) {
     try {
-      const res = await fetch(`${getBaseURL()}/login/status?${ts()}${cookieParam}`);
+      const res = await fetch(
+        `${getBaseURL()}/login/status${loginTs('?')}${cookieParam}`,
+        { cache: 'no-store' },
+      );
       const json = await res.json();
       const profile = json?.data?.profile;
       if (profile && profile.nickname) {
@@ -421,4 +469,277 @@ export async function getLoginStatus(cookie?: string): Promise<LoginStatusInfo> 
     if (i < 2) await new Promise(r => setTimeout(r, 1000));
   }
   return { loggedIn: false };
+}
+
+// ==================== 相似推荐 ====================
+
+/** 相似歌曲（基于当前歌曲） */
+export async function getSimiSong(songId: number, limit = 20): Promise<Song[]> {
+  const res = await fetch(
+    `${getBaseURL()}/simi/song?id=${songId}&limit=${limit}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return (json.songs || []).map(mapNeteaseSong);
+}
+
+/** 相似歌手 */
+export async function getSimiArtist(artistId: number): Promise<NeteaseArtist[]> {
+  const res = await fetch(
+    `${getBaseURL()}/simi/artist?id=${artistId}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return (json.artists || []).map((a: any) => ({
+    id: a.id,
+    name: a.name,
+    picUrl: a.picUrl || a.img1v1Url || '',
+    img1v1Url: a.img1v1Url || '',
+    albumSize: a.albumSize || 0,
+    musicSize: a.musicSize || 0,
+  }));
+}
+
+// ==================== 歌手 ====================
+
+export interface NeteaseArtistDetail {
+  id: number;
+  name: string;
+  briefDesc: string;
+  picUrl: string;
+  albumSize: number;
+  musicSize: number;
+  tags: string[];
+}
+
+/** 歌手详情（简介、标签） */
+export async function getArtistDetail(artistId: number): Promise<NeteaseArtistDetail | null> {
+  const res = await fetch(
+    `${getBaseURL()}/artist/detail?id=${artistId}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  const data = json?.data;
+  if (!data?.artist) return null;
+  const artist = data.artist;
+  return {
+    id: artist.id,
+    name: artist.name,
+    briefDesc: data.user?.briefDesc || artist.briefDesc || '',
+    picUrl: artist.picUrl || artist.img1v1Url || '',
+    albumSize: artist.albumSize || 0,
+    musicSize: artist.musicSize || 0,
+    tags: (artist.tags || []).filter(Boolean),
+  };
+}
+
+/** 歌手介绍（长文本描述） */
+export async function getArtistDesc(artistId: number): Promise<string> {
+  const res = await fetch(
+    `${getBaseURL()}/artist/desc?id=${artistId}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return json?.introduction?.map((s: any) => s.txt).join('\n') || '';
+}
+
+/** 歌手热门 50 首 */
+export async function getArtistTopSongs(artistId: number): Promise<Song[]> {
+  const res = await fetch(
+    `${getBaseURL()}/artist/top/song?id=${artistId}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return (json.songs || []).map(mapNeteaseSong);
+}
+
+// ==================== 专辑 ====================
+
+export interface NeteaseAlbumDetail {
+  id: number;
+  name: string;
+  picUrl: string;
+  description: string;
+  publishTime: number;
+  company: string;
+  artists: NeteaseArtist[];
+}
+
+/** 专辑完整信息（大图、介绍、发行公司、时间） */
+export async function getAlbumFullDetail(albumId: number): Promise<{
+  album: NeteaseAlbumDetail;
+  songs: Song[];
+}> {
+  const res = await fetch(
+    `${getBaseURL()}/album?id=${albumId}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  const album = json.album || {};
+  const songs = (json.songs || []).map(mapNeteaseSong);
+  return {
+    album: {
+      id: album.id,
+      name: album.name || '',
+      picUrl: album.picUrl || '',
+      description: album.description || album.briefDesc || '',
+      publishTime: album.publishTime || 0,
+      company: album.company || '',
+      artists: (album.artists || []).map((a: any) => ({ id: a.id, name: a.name })),
+    },
+    songs,
+  };
+}
+
+// ==================== 用户数据 ====================
+
+/** 用户歌单（包括创建和收藏的） */
+export async function getUserPlaylists(
+  uid: number,
+  limit = 30,
+  offset = 0,
+): Promise<Playlist[]> {
+  const res = await fetch(
+    `${getBaseURL()}/user/playlist?uid=${uid}&limit=${limit}&offset=${offset}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return (json.playlist || []).map((p: NeteasePlaylistItem) =>
+    mapNeteasePlaylist(p),
+  );
+}
+
+export interface UserRecordItem {
+  playCount: number;
+  score: number;
+  song: NeteaseSongItem;
+}
+
+/** 听歌排行（type: 0=所有时间, 1=最近一周） */
+export async function getUserRecord(
+  uid: number,
+  type: 0 | 1 = 0,
+): Promise<UserRecordItem[]> {
+  const res = await fetch(
+    `${getBaseURL()}/user/record?uid=${uid}&type=${type}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  const data = type === 1 ? json?.weekData : json?.allData;
+  return (data || []).map((item: any) => ({
+    playCount: item.playCount || 0,
+    score: item.score || 0,
+    song: item.song,
+  }));
+}
+
+export interface UserSubcount {
+  playlistCount: number;
+  subPlaylistCount: number;
+  artistCount: number;
+  albumCount: number;
+}
+
+/** 收藏计数 */
+export async function getUserSubcount(): Promise<UserSubcount> {
+  const res = await fetch(
+    `${getBaseURL()}/user/subcount${getCookieParam() ? `?${getCookieParam().slice(1)}` : ''}`,
+  );
+  const json = await res.json();
+  return {
+    playlistCount: json?.createdPlaylistCount || json?.playlistCount || 0,
+    subPlaylistCount: json?.subPlaylistCount || 0,
+    artistCount: json?.artistCount || 0,
+    albumCount: json?.albumCount || 0,
+  };
+}
+
+export interface UserDetail {
+  userId: number;
+  nickname: string;
+  avatarUrl: string;
+  signature: string;
+  followeds: number;
+  follows: number;
+  playlistCount: number;
+  level: number;
+  birthday: number;
+  province: number;
+  city: number;
+  gender: number;
+}
+
+/** 用户详情（等级、关注、粉丝、生日等） */
+export async function getUserDetail(uid: number): Promise<UserDetail | null> {
+  const res = await fetch(
+    `${getBaseURL()}/user/detail?uid=${uid}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  const profile = json?.profile;
+  if (!profile) return null;
+  return {
+    userId: profile.userId,
+    nickname: profile.nickname,
+    avatarUrl: profile.avatarUrl,
+    signature: profile.signature || '',
+    followeds: profile.followeds || 0,
+    follows: profile.follows || 0,
+    playlistCount: profile.playlistCount || 0,
+    level: profile.level || 0,
+    birthday: profile.birthday || 0,
+    province: profile.province || 0,
+    city: profile.city || 0,
+    gender: profile.gender || 0,
+  };
+}
+
+/** 关注歌手列表 */
+export async function getUserFollows(
+  uid: number,
+  limit = 30,
+  offset = 0,
+): Promise<NeteaseArtist[]> {
+  const res = await fetch(
+    `${getBaseURL()}/user/follows?uid=${uid}&limit=${limit}&offset=${offset}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return (json.follow || []).map((f: any) => ({
+    id: f.userId,
+    name: f.nickname,
+    picUrl: f.avatarUrl || '',
+    img1v1Url: f.avatarUrl || '',
+    albumSize: 0,
+    musicSize: 0,
+  }));
+}
+
+/** 收藏专辑列表 */
+export async function getUserAlbumSublist(
+  limit = 25,
+  offset = 0,
+): Promise<Playlist[]> {
+  const res = await fetch(
+    `${getBaseURL()}/album/sublist?limit=${limit}&offset=${offset}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return (json.data || []).map((item: any) => {
+    const playCount = item.playCount ? formatPlayCount(item.playCount) : '';
+    return mapNeteasePlaylist(
+      {
+        id: item.id,
+        name: item.name,
+        coverImgUrl: item.picUrl,
+        description: item.copywriter || playCount || '',
+        trackCount: item.size || 0,
+        playCount: item.playCount || 0,
+        creator: { nickname: item.artist?.name || '' },
+      },
+      [],
+    );
+  });
+}
+
+/** 用户动态（最近 events） */
+export async function getUserEvents(
+  uid: number,
+  limit = 30,
+  lasttime = -1,
+): Promise<any[]> {
+  const res = await fetch(
+    `${getBaseURL()}/user/event?uid=${uid}&limit=${limit}&lasttime=${lasttime}${getCookieParam()}`,
+  );
+  const json = await res.json();
+  return json?.events || [];
 }

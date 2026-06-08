@@ -38,7 +38,7 @@ export interface SavedAlbum {
   savedAt: number;
 }
 
-export type ViewType = 'home' | 'search' | 'library' | 'playlist' | 'nowplaying' | 'settings' | 'discover' | 'queue';
+export type ViewType = 'home' | 'search' | 'library' | 'playlist' | 'nowplaying' | 'settings' | 'discover' | 'queue' | 'download';
 
 export interface PlayerState {
   currentSong: Song | null;

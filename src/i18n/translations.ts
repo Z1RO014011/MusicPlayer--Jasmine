@@ -10,6 +10,7 @@ const zh: TranslationMap = {
   'nav.library': '音乐库',
   'nav.settings': '设置',
   'nav.discover': '发现',
+  'nav.download': '下载',
 
   // Actions
   'action.importMusic': '导入音乐',
@@ -38,6 +39,7 @@ const zh: TranslationMap = {
   'sidebar.savedAlbums': '收藏专辑',
   'sidebar.yourPlaylists': '你的歌单',
   'sidebar.emptyHint': '还没有歌单，点击上方创建',
+  'sidebar.cloudPlaylists': '网易云歌单',
   'album.save': '收藏专辑',
   'album.remove': '取消收藏',
 
@@ -122,6 +124,7 @@ const zh: TranslationMap = {
   'np.generating': '生成分享卡片中...',
   'np.lrcHint': '粘贴 LRC 格式歌词（每行格式：[mm:ss.xx]歌词文本）',
   'np.lrcPlaceholder': '[00:12.50]第一句歌词\n[00:25.30]第二句歌词\n[00:42.10]第三句歌词',
+  'np.similarSongs': '相似歌曲',
 
   // Defaults
   'default.likedPlaylistName': '我喜欢的音乐',
@@ -136,6 +139,40 @@ const zh: TranslationMap = {
   'settings.title': '设置',
   'settings.language': '语言',
   'settings.languageLabel': '界面语言',
+
+  // Download
+  'download.eyebrow': 'Jasmine 桌面版',
+  'download.title': '下载适合你系统的安装包',
+  'download.subtitle': '无需安装 Node.js。选择 macOS、Windows 或 Linux 安装包，下载后即可开始使用 Jasmine。',
+  'download.primaryCta': '下载 macOS 推荐版',
+  'download.allReleases': '查看全部版本',
+  'download.versionLabel': '当前版本',
+  'download.versionNote': '包含桌面应用、在线音乐搜索、本地音乐库和分享卡片功能。',
+  'download.platformsLabel': '平台下载',
+  'download.platformMac': 'macOS',
+  'download.platformWindows': 'Windows',
+  'download.platformLinux': 'Linux',
+  'download.badgeRecommended': '推荐',
+  'download.badgeInstaller': '安装包',
+  'download.badgeBuild': '构建',
+  'download.macDesc': '适用于 Apple Silicon 与 Intel Mac。',
+  'download.windowsDesc': '标准安装向导，支持选择安装位置。',
+  'download.linuxDesc': 'v2.0.0 暂未上传 Linux 安装包。',
+  'download.macAppleDmg': 'Apple Silicon DMG',
+  'download.macIntelDmg': 'Intel x64 DMG',
+  'download.macZip': 'Apple Silicon ZIP 便携版',
+  'download.macIntelZip': 'Intel x64 ZIP 便携版',
+  'download.windowsInstaller': 'Windows x64 安装程序',
+  'download.linuxReleasePage': '查看 v2.0.0 Release',
+  'download.dmgMeta': 'DMG 安装包 · v2.0.0',
+  'download.zipMeta': 'ZIP 便携包 · v2.0.0',
+  'download.windowsMeta': 'NSIS 安装包 · v2.0.0',
+  'download.linuxMeta': '暂无 AppImage 资产',
+  'download.installTitle': '安装提示',
+  'download.installDesc': 'macOS 首次打开时，如果系统提示无法验证开发者，请到系统设置的隐私与安全性中选择仍要打开。',
+  'download.stepDownload': '下载安装包',
+  'download.stepInstall': '完成安装',
+  'download.stepPlay': '开始播放',
 
   // Common
   'common.songCount': '{count} 首歌曲',
@@ -208,6 +245,7 @@ const en: TranslationMap = {
   'nav.library': 'Library',
   'nav.settings': 'Settings',
   'nav.discover': 'Discover',
+  'nav.download': 'Download',
 
   // Actions
   'action.importMusic': 'Import Music',
@@ -236,6 +274,7 @@ const en: TranslationMap = {
   'sidebar.savedAlbums': 'Saved Albums',
   'sidebar.yourPlaylists': 'Your Playlists',
   'sidebar.emptyHint': 'No playlists yet, create one above',
+  'sidebar.cloudPlaylists': 'Cloud Playlists',
   'album.save': 'Save Album',
   'album.remove': 'Remove',
 
@@ -320,6 +359,7 @@ const en: TranslationMap = {
   'np.generating': 'Generating share card...',
   'np.lrcHint': 'Paste LRC format lyrics (format per line: [mm:ss.xx]lyric text)',
   'np.lrcPlaceholder': '[00:12.50]First line of lyrics\n[00:25.30]Second line of lyrics\n[00:42.10]Third line of lyrics',
+  'np.similarSongs': 'Similar Songs',
 
   // Defaults
   'default.likedPlaylistName': 'Liked Songs',
@@ -334,6 +374,40 @@ const en: TranslationMap = {
   'settings.title': 'Settings',
   'settings.language': 'Language',
   'settings.languageLabel': 'Interface Language',
+
+  // Download
+  'download.eyebrow': 'Jasmine Desktop',
+  'download.title': 'Download the installer for your system',
+  'download.subtitle': 'No Node.js required. Pick the macOS, Windows, or Linux package and start listening with Jasmine.',
+  'download.primaryCta': 'Download macOS Recommended',
+  'download.allReleases': 'View All Releases',
+  'download.versionLabel': 'Current Version',
+  'download.versionNote': 'Includes the desktop app, online music search, local library, and share cards.',
+  'download.platformsLabel': 'Platform downloads',
+  'download.platformMac': 'macOS',
+  'download.platformWindows': 'Windows',
+  'download.platformLinux': 'Linux',
+  'download.badgeRecommended': 'Recommended',
+  'download.badgeInstaller': 'Installer',
+  'download.badgeBuild': 'Build',
+  'download.macDesc': 'For Apple Silicon and Intel Macs.',
+  'download.windowsDesc': 'Standard setup wizard with install location support.',
+  'download.linuxDesc': 'No Linux installer is uploaded for v2.0.0 yet.',
+  'download.macAppleDmg': 'Apple Silicon DMG',
+  'download.macIntelDmg': 'Intel x64 DMG',
+  'download.macZip': 'Apple Silicon ZIP Portable',
+  'download.macIntelZip': 'Intel x64 ZIP Portable',
+  'download.windowsInstaller': 'Windows x64 Installer',
+  'download.linuxReleasePage': 'View v2.0.0 Release',
+  'download.dmgMeta': 'DMG installer · v2.0.0',
+  'download.zipMeta': 'ZIP portable · v2.0.0',
+  'download.windowsMeta': 'NSIS installer · v2.0.0',
+  'download.linuxMeta': 'No AppImage asset yet',
+  'download.installTitle': 'Install note',
+  'download.installDesc': 'On first launch, macOS may ask you to confirm the app. Open System Settings, go to Privacy & Security, then choose Open Anyway.',
+  'download.stepDownload': 'Download package',
+  'download.stepInstall': 'Install app',
+  'download.stepPlay': 'Start listening',
 
   // Common
   'common.songCount': '{count} songs',

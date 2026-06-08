@@ -3,7 +3,9 @@ import { Song, Playlist } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 import { useI18n } from '../i18n/I18nContext';
 import { defaultSource } from '../lib/sources';
-import { createLoginQR, checkLoginQR, getLoginStatus, setLoginCookie, getLoginCookie, getArtistSongs, getAlbumDetail, searchOnline, searchArtists, searchAlbums, getPlaylistCategories, getTopPlaylistsByCat, getSearchHot, getRecommendResource, type LoginQRStatus, type NeteaseArtist, type NeteaseAlbum, type PlaylistCategory, type SearchHotItem } from '../lib/neteaseApi';
+import { getLoginStatus, setLoginCookie, getLoginCookie, getArtistSongs, getAlbumDetail, searchOnline, searchArtists, searchAlbums, getPlaylistCategories, getTopPlaylistsByCat, getSearchHot, getRecommendResource, type LoginQRStatus, type NeteaseArtist, type NeteaseAlbum, type PlaylistCategory, type SearchHotItem } from '../lib/neteaseApi';
+import { startQrLoginSession, type QrLoginSession } from '../lib/neteaseLogin';
+import { Skeleton, SkeletonCard } from './Skeleton';
 
 type DiscoverTab = 'search' | 'recommended' | 'charts';
 
@@ -54,14 +56,15 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
 
 
   // Login state
-  const [loginInfo, setLoginInfo] = useState<{ loggedIn: boolean; nickname?: string; avatarUrl?: string }>({ loggedIn: false });
+  const [loginInfo, setLoginInfo] = useState<{ loggedIn: boolean; nickname?: string; avatarUrl?: string; userId?: number }>({ loggedIn: false });
   const [showLogin, setShowLogin] = useState(false);
   const [qrImg, setQrImg] = useState('');
   const [loginStatus, setLoginStatus] = useState<LoginQRStatus>({ code: 801, message: 'waiting' });
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
-  const keyRef = useRef('');
-  const pollRef = useRef<ReturnType<typeof setInterval>>();
+  const loginSessionRef = useRef<QrLoginSession | null>(null);
+  const loginAttemptRef = useRef(0);
+  const successCloseRef = useRef<ReturnType<typeof setTimeout>>();
 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
   const abortRef = useRef<AbortController>();
@@ -130,44 +133,56 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
   };
 
   // --- Login flow ---
+  const clearLoginTimers = () => {
+    loginSessionRef.current?.cancel();
+    loginSessionRef.current = null;
+    if (successCloseRef.current) {
+      clearTimeout(successCloseRef.current);
+      successCloseRef.current = undefined;
+    }
+  };
+
   const startLogin = async () => {
+    clearLoginTimers();
+    const attemptId = loginAttemptRef.current + 1;
+    loginAttemptRef.current = attemptId;
     setLoginLoading(true);
     setLoginError('');
     setLoginStatus({ code: 801, message: 'waiting' });
     setQrImg('');
-    try {
-      const { key, qrimg } = await createLoginQR();
-      keyRef.current = key;
-      setQrImg(qrimg);
-      setLoginLoading(false);
-
-      const doPoll = async () => {
-        try {
-          const result = await checkLoginQR(key);
-          setLoginStatus(result);
-          if (result.code === 803) {
-            clearInterval(pollRef.current);
-            // Store cookie for authenticated API calls (full songs)
-            setLoginCookie(result.cookie);
-            // Pass the cookie to getLoginStatus
-            const info = await getLoginStatus(result.cookie);
-            setLoginInfo(info);
-            setTopPlaylists([]); // force reload with personalized recommendations
-            setTimeout(() => setShowLogin(false), 1500);
-          } else if (result.code === 800 || result.code === -1) {
-            // QR expired or error → auto-refresh
-            clearInterval(pollRef.current);
-            startLogin();
-          }
-        } catch {}
-      };
-
-      doPoll();
-      pollRef.current = setInterval(doPoll, 2500);
-    } catch {
-      setLoginError(t('login.error'));
-      setLoginLoading(false);
-    }
+    loginSessionRef.current = startQrLoginSession({
+      onLoading: loading => {
+        if (loginAttemptRef.current === attemptId) setLoginLoading(loading);
+      },
+      onQr: qrimg => {
+        if (loginAttemptRef.current === attemptId) setQrImg(qrimg);
+      },
+      onStatus: status => {
+        if (loginAttemptRef.current === attemptId) setLoginStatus(status);
+      },
+      onSuccess: cookie => {
+        if (loginAttemptRef.current !== attemptId) return;
+        loginSessionRef.current = null;
+        setLoginStatus({ code: 803, message: 'success', cookie });
+        setLoginCookie(cookie);
+        getLoginStatus(cookie)
+          .catch(() => ({ loggedIn: false }))
+          .then(info => {
+            if (loginAttemptRef.current !== attemptId) return;
+            setLoginInfo(info.loggedIn ? info : { loggedIn: true, nickname: '网易云音乐' });
+            setTopPlaylists([]);
+            successCloseRef.current = setTimeout(() => {
+              if (loginAttemptRef.current === attemptId) setShowLogin(false);
+            }, 1500);
+          });
+      },
+      onError: () => {
+        if (loginAttemptRef.current === attemptId) {
+          setLoginError(t('login.error'));
+          setLoginLoading(false);
+        }
+      },
+    });
   };
 
   const handleOpenLogin = () => {
@@ -231,8 +246,9 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
   };
 
   const handleCloseLogin = () => {
+    loginAttemptRef.current += 1;
     setShowLogin(false);
-    clearInterval(pollRef.current);
+    clearLoginTimers();
   };
 
   // --- Playback ---
@@ -374,7 +390,23 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
             </button>
           )}
         </div>
-        {subViewLoading ? <div className="discover-loading">{t('discover.loading')}</div>
+        {subViewLoading ? (
+          <div className="skeleton-loading-grid">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="track-row" style={{ gridTemplateColumns: '40px 1fr 1fr 1fr 36px 60px 40px', pointerEvents: 'none' }}>
+                <Skeleton width={20} height={14} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Skeleton width={40} height={40} borderRadius={10} />
+                  <Skeleton width={100} height={14} />
+                </div>
+                <Skeleton width={80} height={12} />
+                <Skeleton width={60} height={12} />
+                <Skeleton width={20} height={14} />
+                <Skeleton width={36} height={14} />
+              </div>
+            ))}
+          </div>
+        )
           : subViewPlaylist ? <div className="search-song-list">{subViewPlaylist.songs.map((s, i) => (
             <div key={s.id} className="track-row" onClick={() => handlePlayOnlineSong(s, subViewPlaylist.songs)}>
               <span className="track-col-num">{i + 1}</span>
@@ -435,7 +467,7 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
         <div className="discover-login-area">
           {loginInfo.loggedIn ? (
             <span className="login-user-badge">
-              {loginInfo.avatarUrl ? <img src={loginInfo.avatarUrl} alt="" className="login-avatar" /> : null}
+              {loginInfo.avatarUrl ? <img src={loginInfo.avatarUrl} alt="" className="login-avatar" loading="lazy" /> : null}
               {loginInfo.nickname}
             </span>
           ) : (
@@ -455,7 +487,11 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
             <input type="text" placeholder={t('discover.searchPlaceholder')} value={query} onChange={e => handleSearchInput(e.target.value)} className="search-input" autoFocus />
             {query && <button className="search-clear" onClick={() => { setQuery(''); setSearchResults(null); setSearchError(''); }}><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3.293 3.293a1 1 0 011.414 0L12 10.586l7.293-7.293a1 1 0 111.414 1.414L13.414 12l7.293 7.293a1 1 0 01-1.414 1.414L12 13.414l-7.293 7.293a1 1 0 01-1.414-1.414L10.586 12 3.293 4.707a1 1 0 010-1.414z"/></svg></button>}
           </div>
-          {searchLoading ? <div className="discover-loading">{t('discover.loading')}</div>
+          {searchLoading ? (
+            <div className="skeleton-loading-grid">
+              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          )
             : searchError ? (
               <div className="search-empty"><p>{searchError}</p></div>
             )
@@ -483,7 +519,17 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
 
                 {/* Artists tab */}
                 {resultType === 'artists' && (
-                  searchArtistsList.length === 0 ? <div className="discover-loading">{t('discover.loading')}</div> :
+                  searchArtistsList.length === 0 ? (
+                    <div className="artist-grid">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="artist-card" style={{ pointerEvents: 'none' }}>
+                          <Skeleton width={120} height={120} borderRadius={9999} />
+                          <Skeleton width={80} height={16} />
+                          <Skeleton width={50} height={12} />
+                        </div>
+                      ))}
+                    </div>
+                  ) :
                   <div className="artist-grid">
                     {searchArtistsList.map(a => (
                       <div key={a.id} className="artist-card" onClick={() => openArtistDetail(a)}>
@@ -504,7 +550,11 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
 
                 {/* Albums tab */}
                 {resultType === 'albums' && (
-                  searchAlbumsList.length === 0 ? <div className="discover-loading">{t('discover.loading')}</div> :
+                  searchAlbumsList.length === 0 ? (
+                    <div className="skeleton-loading-grid">
+                      {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+                    </div>
+                  ) :
                   <div className="playlist-grid">
                     {searchAlbumsList.map(a => {
                       const saved = isAlbumSaved(a.id);
@@ -586,7 +636,11 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
 
       {/* Recommended */}
       {tab === 'recommended' && (
-        loading ? <div className="discover-loading">{t('discover.loading')}</div> :
+        loading ? (
+          <div className="skeleton-loading-grid">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) :
         <>
           <div className="section-header">
             <h2 className="section-title">{activeCat || t('discover.recommended')}</h2>
@@ -619,7 +673,11 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
           )}
 
           {/* Playlists */}
-          {catLoading ? <div className="discover-loading">{t('discover.loading')}</div> :
+          {catLoading ? (
+            <div className="skeleton-loading-grid">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) :
             activeCat ? (
               <div className="playlist-grid">{catPlaylists.map(pl => renderPlaylistCard(pl, pl.id))}</div>
             ) : (
@@ -631,7 +689,16 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
 
       {/* Charts */}
       {tab === 'charts' && (
-        loading ? <div className="discover-loading">{t('discover.loading')}</div>
+        loading ? (
+          <div className="charts-list">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="charts-item" style={{ pointerEvents: 'none' }}>
+                <Skeleton width="55%" height={18} />
+                <Skeleton width={16} height={16} borderRadius={4} />
+              </div>
+            ))}
+          </div>
+        )
           : <div className="charts-list">
               {charts.map(c => (
                 <div key={c.id} className="charts-item" onClick={() => handleOpenPlaylist({ type: 'playlist', id: c.id, name: c.name })}>
@@ -659,7 +726,7 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
             ) : (
               <>
                 <div className="login-qr-container">
-                  {qrImg ? <img src={qrImg} alt="QR" className="login-qr-img" /> : <div className="login-qr-placeholder" />}
+                  {qrImg ? <img src={qrImg} alt="QR" className="login-qr-img" loading="eager" /> : <div className="login-qr-placeholder" />}
                   <div className="login-qr-status">{loginText[loginStatus.message] || loginText.waiting}</div>
                 </div>
                 <p className="login-hint">{t('login.hint')}</p>

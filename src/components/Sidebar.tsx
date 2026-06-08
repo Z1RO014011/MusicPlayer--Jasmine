@@ -7,10 +7,12 @@ interface SidebarProps {
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
   onSelectPlaylist: (playlist: Playlist) => void;
+  onSelectNeteasePlaylist?: (playlist: Playlist) => void;
   collapsed: boolean;
+  neteasePlaylists?: Playlist[];
 }
 
-export function Sidebar({ currentView, onViewChange, onSelectPlaylist, collapsed }: SidebarProps) {
+export function Sidebar({ currentView, onViewChange, onSelectPlaylist, onSelectNeteasePlaylist, collapsed, neteasePlaylists = [] }: SidebarProps) {
   const { userPlaylists } = usePlayer();
   const { t } = useI18n();
   const iconPath = `${import.meta.env.BASE_URL}icon.png`;
@@ -18,7 +20,7 @@ export function Sidebar({ currentView, onViewChange, onSelectPlaylist, collapsed
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-logo">
-        <img className="sidebar-logo-mark" src={iconPath} alt="" />
+        <img className="sidebar-logo-mark" src={iconPath} alt="Jasmine Logo" loading="lazy" />
         {!collapsed && <span className="sidebar-logo-text">Jasmine</span>}
       </div>
 
@@ -71,6 +73,17 @@ export function Sidebar({ currentView, onViewChange, onSelectPlaylist, collapsed
           </svg>
           {!collapsed && <span>{t('nav.settings')}</span>}
         </button>
+        <button
+          className={`sidebar-nav-item ${currentView === 'download' ? 'active' : ''}`}
+          onClick={() => onViewChange('download')}
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3v11" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M5 20h14" />
+          </svg>
+          {!collapsed && <span>{t('nav.download')}</span>}
+        </button>
       </nav>
 
       <div className="sidebar-divider" />
@@ -80,7 +93,7 @@ export function Sidebar({ currentView, onViewChange, onSelectPlaylist, collapsed
       )}
 
       <div className="sidebar-playlists">
-        {!collapsed && userPlaylists.length === 0 && (
+        {!collapsed && userPlaylists.length === 0 && neteasePlaylists.length === 0 && (
           <div className="sidebar-empty">{t('sidebar.emptyHint')}</div>
         )}
         {userPlaylists.map(pl => (

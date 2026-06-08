@@ -3,6 +3,10 @@ import { usePlayer } from '../context/PlayerContext';
 import { useI18n } from '../i18n/I18nContext';
 import { LyricsView } from './LyricsView';
 import { generateShareCard } from '../lib/share';
+import { SkeletonCover } from './Skeleton';
+import { getSimiSong } from '../lib/neteaseApi';
+import { defaultSource } from '../lib/sources';
+import type { Song } from '../types';
 
 interface NowPlayingViewProps {
   onBack: () => void;
@@ -10,8 +14,8 @@ interface NowPlayingViewProps {
 }
 
 export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
-  const { state, dispatch, togglePlay, nextTrack, prevTrack, audioRef, isLiked, toggleLike, updateSongLyrics } = usePlayer();
-  const { t } = useI18n();
+  const { state, dispatch, togglePlay, nextTrack, prevTrack, audioRef, isLiked, toggleLike, updateSongLyrics, playSong } = usePlayer();
+  const { t } = useI18n();  const source = defaultSource;
   const { currentSong, isPlaying, currentTime, duration, volume, isShuffled, repeatMode } = state;
   const progressRef = useRef<HTMLDivElement>(null);
   const volumeRef = useRef<HTMLDivElement>(null);
@@ -23,6 +27,9 @@ export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
   const [showLyrics, setShowLyrics] = useState(false);
   const [editingLyrics, setEditingLyrics] = useState(false);
   const [lrcInput, setLrcInput] = useState('');
+  const [simiSongs, setSimiSongs] = useState<Song[]>([]);
+  const [simiLoading, setSimiLoading] = useState(false);
+  const [showSimi, setShowSimi] = useState(false);
 
   function formatTime(sec: number): string {
     if (isNaN(sec) || sec < 0) return '0:00';
@@ -116,6 +123,28 @@ export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
     if (audioRef.current) audioRef.current.currentTime = time;
     dispatch({ type: 'SEEK', time });
   }, [audioRef, dispatch]);
+
+  // --- similar songs ---
+  useEffect(() => {
+    if (!currentSong?.neteaseId || !showLyrics) return;
+    setSimiLoading(true);
+    getSimiSong(currentSong.neteaseId, 10)
+      .then(setSimiSongs)
+      .catch(() => setSimiSongs([]))
+      .finally(() => setSimiLoading(false));
+  }, [currentSong?.neteaseId, showLyrics]);
+
+  const handlePlaySimiSong = useCallback(async (song: Song, _index: number) => {
+    const id = song.id.replace(/^netease-/, '');
+    const audioUrl = song.audioUrl || (await source.getAudioUrl(id)) || undefined;
+    playSong(
+      audioUrl ? { ...song, audioUrl } : song,
+      simiSongs.length > 0 ? simiSongs.map(s => {
+        if (s.id === song.id) return audioUrl ? { ...song, audioUrl } : song;
+        return s;
+      }) : undefined,
+    );
+  }, [playSong, simiSongs, source]);
 
   const handleSaveLyrics = useCallback(() => {
     if (!currentSong || !lrcInput.trim()) return;
@@ -285,6 +314,15 @@ export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
               <>
                 <div className="np-lyrics-right-actions">
                   <button
+                    className={`nowplaying-lyrics-toggle${showSimi ? ' active' : ''}`}
+                    onClick={() => setShowSimi(!showSimi)}
+                    title={showSimi ? t('np.closeLyrics') : t('np.similarSongs')}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l4.5 4.5-1.5 1.5-4.5-4.5v-.79l-.27-.27A6.5 6.5 0 119.5 3zm0 2a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"/>
+                    </svg>
+                  </button>
+                  <button
                     className="nowplaying-lyrics-edit-btn"
                     onClick={() => { setEditingLyrics(true); setLrcInput(''); }}
                     title={t('np.editLyrics')}
@@ -294,8 +332,8 @@ export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
                     </svg>
                   </button>
                   <button
-                    className={`nowplaying-lyrics-toggle${showLyrics ? ' active' : ''}`}
-                    onClick={() => { setShowLyrics(false); setEditingLyrics(false); }}
+                    className={`nowplaying-lyrics-toggle${showLyrics && !showSimi ? ' active' : ''}`}
+                    onClick={() => { setShowLyrics(false); setEditingLyrics(false); setShowSimi(false); }}
                     title={t('np.closeLyrics')}
                   >
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -303,12 +341,40 @@ export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
                     </svg>
                   </button>
                 </div>
+                {showSimi ? (
+                  <div className="np-simi-panel">
+                    <h3 className="np-simi-title">{t('np.similarSongs')}</h3>
+                    {simiLoading ? (
+                      <div className="np-simi-loading">{t('discover.loading')}</div>
+                    ) : simiSongs.length === 0 ? (
+                      <div className="np-simi-empty">{t('discover.searchHint')}</div>
+                    ) : (
+                      <div className="np-simi-list">
+                        {simiSongs.slice(0, 10).map((song, i) => (
+                          <div
+                            key={song.id}
+                            className="np-simi-row"
+                            onClick={() => handlePlaySimiSong(song, i)}
+                          >
+                            <span className="np-simi-num">{i + 1}</span>
+                            <div className="np-simi-cover" style={{ background: song.coverColor }} />
+                            <div className="np-simi-info">
+                              <div className="np-simi-name">{song.title}</div>
+                              <div className="np-simi-artist">{song.artist}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <LyricsView
                   lyrics={lyrics}
                   currentTime={currentTime}
                   isPlaying={isPlaying}
                   onSeek={handleLyricSeek}
                 />
+                )}
               </>
             ) : (
               <div className="nowplaying-no-lyrics">
@@ -536,7 +602,7 @@ export function NowPlayingView({ onBack, onOpenArtist }: NowPlayingViewProps) {
               </button>
             </div>
             <div className="share-card-preview">
-              <img src={shareImage} alt={t('np.shareCard')} />
+              <img src={shareImage} alt={t('np.shareCard')} loading="lazy" />
             </div>
             <div className="share-modal-actions">
               <button className="share-download-btn" onClick={handleDownloadShare}>

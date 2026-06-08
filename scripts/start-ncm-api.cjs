@@ -14,7 +14,7 @@ Module._load = function patchedLoad(request, parent, isMain) {
   return originalLoad.call(this, request, parent, isMain);
 };
 
-const { serveNcmApi } = require('NeteaseCloudMusicApi/server');
+const { serveNcmApi } = require('NeteaseCloudMusicApi');
 
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || '127.0.0.1';

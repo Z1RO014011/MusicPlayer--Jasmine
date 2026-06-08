@@ -45,11 +45,13 @@ npm run dev:frontend
 
 | 系统 | 下载 | 说明 |
 |------|------|------|
-| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64.dmg](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0-arm64.dmg) | DMG 安装包 |
-| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64-mac.zip](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0-arm64-mac.zip) | ZIP 便携版 |
-| macOS (Intel x64) | [Jasmine-2.0.0.dmg](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0.dmg) | DMG 安装包 |
-| macOS (Intel x64) | [Jasmine-2.0.0-mac.zip](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine-2.0.0-mac.zip) | ZIP 便携版 |
-| Windows (x64) | [Jasmine Setup 2.0.0.exe](https://github.com/Z1RO014011/DeepSeekV4-flash-MusicPlayer/releases/download/v2.0.0/Jasmine%20Setup%202.0.0.exe) | NSIS 安装包 |
+| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64.dmg) | DMG 安装包 |
+| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64-mac.zip) | ZIP 便携版 |
+| macOS (Intel x64) | [Jasmine-2.0.0.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0.dmg) | DMG 安装包 |
+| macOS (Intel x64) | [Jasmine-2.0.0-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-mac.zip) | ZIP 便携版 |
+| Windows (x64) | [Jasmine.Setup.2.0.0.exe](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine.Setup.2.0.0.exe) | NSIS 安装包 |
+
+> v2.0.0 暂未上传 Linux AppImage。可查看 [Release 页面](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/tag/v2.0.0) 获取当前全部资产。
 
 > 首次打开 macOS 需在 **系统设置 → 隐私与安全性** 中点"仍要打开"。
 

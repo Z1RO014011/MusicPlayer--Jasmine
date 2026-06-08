@@ -42,6 +42,68 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1, h2, h3, h4, h5, h6, .hero-title, .section-title, .sidebar-logo-text,
+.playlist-detail-title, .nowplaying-view-title, .library-title,
+.playlist-card-title, .settings-title, .empty-title, .modal-title {
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Focus-visible: custom ring for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-card) 0%,
+    rgba(255, 255, 255, 0.12) 40%,
+    var(--bg-card) 80%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-mt {
+  margin-top: 8px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .skeleton-shimmer {
+    animation: none;
+    background: var(--bg-card);
+  }
+
+  .equalizer span {
+    animation: none;
+  }
+}
+
 button {
   cursor: pointer;
   border: none;

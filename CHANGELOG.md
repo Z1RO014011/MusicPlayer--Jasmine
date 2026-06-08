@@ -4,6 +4,30 @@
 
 ---
 
+## v2.1 — 嘻哈垂直方向基建（2026-06-07）
+
+### 网易云 API 扩展
+- 新增 13 个 API 封装：`getSimiSong`、`getSimiArtist`、`getArtistDetail`、`getArtistDesc`、`getArtistTopSongs`、`getAlbumFullDetail`、`getUserPlaylists`、`getUserRecord`、`getUserSubcount`、`getUserDetail`、`getUserFollows`、`getUserAlbumSublist`、`getUserEvents`
+
+### 相似歌曲
+- NowPlaying 歌词视图新增「相似歌曲」面板（点搜索图标切换）
+- 调用 `/simi/song`，展示 10 首相似歌曲，支持点击播放
+
+### 网易云用户歌单
+- Library 歌单 Tab 接入网易云用户歌单（需扫码登录）
+- 歌单卡片带 🎵 标识与「我喜欢的音乐」红心样式区分
+- 点击进入详情页，支持播放（带懒加载音频 URL）
+- 大歌单（2000+ 首）分页拉取：`/playlist/detail` 拿完整 trackIds → `/song/detail` 分批补全
+
+### 修复
+- `mapNeteaseSong` 显式初始化 `audioUrl: undefined`，修复云歌单歌曲 duration=0 问题
+- `initAudio` 修复 `song.audioUrl` 直接赋值不生效的问题
+
+### 已知问题
+- **大歌单播放失败（严重）**：2000+ 首歌的歌单点击播放后进度条保持在 0、无法播放。小歌单正常播放。尝试过不传 queue / 传 50 首窗口均无效。排查记录见 `graduation-project-notes/PLAYBACK_BUG.md`
+
+---
+
 ## v1.0 — 项目初始化与基础架构
 
 ### 项目骨架

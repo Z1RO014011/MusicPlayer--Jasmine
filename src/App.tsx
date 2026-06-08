@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { ViewType, Playlist } from './types';
 import { I18nProvider } from './i18n/I18nContext';
 import { PlayerProvider, usePlayer } from './context/PlayerContext';
@@ -11,7 +11,9 @@ import { NowPlayingView } from './components/NowPlayingView';
 import { SettingsView } from './components/SettingsView';
 import { DiscoverView } from './components/DiscoverView';
 import { QueueView } from './components/QueueView';
+import { DownloadView } from './components/DownloadView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { getLoginStatus, getLoginCookie, getUserPlaylists, setLoginCookie } from './lib/neteaseApi';
 import './App.css';
 
 interface ArtistOpenRequest {
@@ -26,6 +28,8 @@ function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [prevView, setPrevView] = useState<ViewType>('discover');
   const [artistOpenRequest, setArtistOpenRequest] = useState<ArtistOpenRequest | null>(null);
+  const [neteaseUserId, setNeteaseUserId] = useState<number | null>(null);
+  const [neteasePlaylists, setNeteasePlaylists] = useState<Playlist[]>([]);
   const { userPlaylists, togglePlay, nextTrack, prevTrack, state, dispatch, audioRef } = usePlayer();
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +55,19 @@ function AppContent() {
 
   useKeyboardShortcuts(shortcuts, true);
 
+  // Check Netease login & load user playlists on mount
+  useEffect(() => {
+    const cookie = getLoginCookie();
+    if (!cookie) return;
+    getLoginStatus(cookie).then(info => {
+      if (info.loggedIn && info.userId) {
+        setLoginCookie(cookie);
+        setNeteaseUserId(info.userId);
+        getUserPlaylists(info.userId).then(setNeteasePlaylists).catch(() => {});
+      }
+    }).catch(() => {});
+  }, []);
+
   const handleViewChange = useCallback((view: ViewType) => {
     setCurrentView(view);
     setSelectedPlaylistId(null);
@@ -59,6 +76,12 @@ function AppContent() {
   }, []);
 
   const handleSelectPlaylist = useCallback((playlist: Playlist) => {
+    setSelectedPlaylistId(playlist.id);
+    setCurrentView('playlist');
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+  }, []);
+
+  const handleSelectNeteasePlaylist = useCallback((playlist: Playlist) => {
     setSelectedPlaylistId(playlist.id);
     setCurrentView('playlist');
     if (mainRef.current) mainRef.current.scrollTop = 0;
@@ -93,7 +116,9 @@ function AppContent() {
   }, []);
 
   const selectedPlaylist = selectedPlaylistId
-    ? userPlaylists.find(pl => pl.id === selectedPlaylistId) || null
+    ? (userPlaylists.find(pl => pl.id === selectedPlaylistId)
+        || neteasePlaylists.find(pl => pl.id === selectedPlaylistId)
+        || null)
     : null;
 
   function renderMainContent() {
@@ -102,11 +127,13 @@ function AppContent() {
         return <NowPlayingView onBack={handleCloseNowPlaying} onOpenArtist={handleOpenArtist} />;
       case 'home':
       case 'library':
-        return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
+        return <LibraryView onSelectPlaylist={handleSelectPlaylist} neteasePlaylists={neteasePlaylists} />;
       case 'search':
         return <SearchView onSelectPlaylist={handleSelectPlaylist} />;
       case 'settings':
         return <SettingsView />;
+      case 'download':
+        return <DownloadView />;
       case 'discover':
         return <DiscoverView artistOpenRequest={artistOpenRequest} />;
       case 'queue':
@@ -120,9 +147,9 @@ function AppContent() {
             />
           );
         }
-        return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
+        return <LibraryView onSelectPlaylist={handleSelectPlaylist} neteasePlaylists={neteasePlaylists} />;
       default:
-        return <LibraryView onSelectPlaylist={handleSelectPlaylist} />;
+        return <LibraryView onSelectPlaylist={handleSelectPlaylist} neteasePlaylists={neteasePlaylists} />;
     }
   }
 
@@ -135,7 +162,9 @@ function AppContent() {
               currentView={currentView === 'playlist' ? 'library' : currentView}
               onViewChange={handleViewChange}
               onSelectPlaylist={handleSelectPlaylist}
+              onSelectNeteasePlaylist={handleSelectNeteasePlaylist}
               collapsed={sidebarCollapsed}
+              neteasePlaylists={neteasePlaylists}
             />
             <button className="sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">

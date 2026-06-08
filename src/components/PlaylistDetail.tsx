@@ -1,22 +1,32 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Playlist, Song } from '../types';
 import { usePlayer, LIKED_PLAYLIST_ID } from '../context/PlayerContext';
 import { useI18n } from '../i18n/I18nContext';
 import { gradientColors } from '../data';
+import { getBatchSongAudioUrls, getPlaylistDetail, getSongAudioUrl } from '../lib/neteaseApi';
 
 interface PlaylistDetailProps {
   playlist: Playlist;
   onBack: () => void;
 }
 
+const NETEASE_QUEUE_WINDOW_SIZE = 50;
+const NETEASE_URL_PREFETCH_COUNT = 8;
+const INITIAL_TRACK_RENDER_COUNT = 300;
+const TRACK_RENDER_INCREMENT = 300;
+
 export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
   const { playPlaylist, playSong, removeSongFromPlaylist, deletePlaylist, renamePlaylist, userSongs, addSongsToPlaylist, updatePlaylistCover, toggleLike, isLiked } = usePlayer();
   const { t } = useI18n();
   const isLikedPlaylist = playlist.id === LIKED_PLAYLIST_ID;
+  const isNetease = playlist.id.startsWith('netease-pl-');
+  const [neteaseData, setNeteaseData] = useState<Playlist | null>(null);
+  const [neteaseLoading, setNeteaseLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(playlist.name);
   const [showAddSongs, setShowAddSongs] = useState(false);
   const [showCoverEditor, setShowCoverEditor] = useState(false);
+  const [visibleTrackCount, setVisibleTrackCount] = useState(INITIAL_TRACK_RENDER_COUNT);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function formatDuration(seconds: number): string {
@@ -24,8 +34,6 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
     const m = Math.floor((seconds % 3600) / 60);
     return h > 0 ? t('common.durationHours', { h, m }) : t('common.durationMinutes', { m });
   }
-
-  const totalDuration = playlist.songs.reduce((acc, s) => acc + s.duration, 0);
 
   function handleRename() {
     if (editName.trim() && editName.trim() !== playlist.name) {
@@ -62,6 +70,98 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
   }
 
   const availableSongs = userSongs.filter(s => !playlist.songs.some(ps => ps.id === s.id));
+  const resolvedPlaylist = isNetease ? (neteaseData || playlist) : playlist;
+  const totalDuration = resolvedPlaylist.songs.reduce((acc, s) => acc + s.duration, 0);
+
+  async function prepareNeteaseQueueWindow(songs: Song[], activeIndex: number): Promise<{ playable: Song; queue: Song[]; currentWindowIndex: number } | null> {
+    const currentSong = songs[activeIndex];
+    if (!currentSong) return null;
+    const halfWindow = Math.floor(NETEASE_QUEUE_WINDOW_SIZE / 2);
+    const maxStart = Math.max(0, songs.length - NETEASE_QUEUE_WINDOW_SIZE);
+    const start = Math.min(Math.max(0, activeIndex - halfWindow), maxStart);
+    const queue = songs.slice(start, start + NETEASE_QUEUE_WINDOW_SIZE);
+    const currentWindowIndex = activeIndex - start;
+    const currentAudioUrl = currentSong.audioUrl
+      || (currentSong.neteaseId ? (await getSongAudioUrl(currentSong.neteaseId)) || undefined : undefined);
+    if (!currentAudioUrl) return null;
+    const preparedQueue = queue.map((song, offset) =>
+      offset === currentWindowIndex ? { ...song, audioUrl: currentAudioUrl } : song
+    );
+    const playable = preparedQueue[currentWindowIndex];
+    return playable?.audioUrl ? { playable, queue: preparedQueue, currentWindowIndex } : null;
+  }
+
+  async function prefetchNeteaseQueueUrls(queue: Song[], currentWindowIndex: number) {
+    const preloadIds = queue
+      .slice(currentWindowIndex + 1, currentWindowIndex + NETEASE_URL_PREFETCH_COUNT)
+      .filter(s => s.source === 'online' && s.neteaseId && !s.audioUrl)
+      .map(s => s.neteaseId as number);
+    if (preloadIds.length === 0) return;
+    const urlMap = await getBatchSongAudioUrls(preloadIds);
+    const preparedById = new Map<string, Song>();
+    for (const song of queue) {
+      if (!song.neteaseId || song.audioUrl) continue;
+      const audioUrl = urlMap.get(song.neteaseId) || undefined;
+      if (!audioUrl) continue;
+      song.audioUrl = audioUrl;
+      preparedById.set(song.id, { ...song, audioUrl });
+    }
+    if (preparedById.size === 0) return;
+    setNeteaseData(prev => prev
+      ? { ...prev, songs: prev.songs.map(item => preparedById.get(item.id) || item) }
+      : prev
+    );
+  }
+
+  // Load netease playlist detail
+  useEffect(() => {
+    if (!isNetease) return;
+    setNeteaseLoading(true);
+    setVisibleTrackCount(INITIAL_TRACK_RENDER_COUNT);
+    const id = playlist.id.replace(/^netease-pl-/, '');
+    getPlaylistDetail(Number(id), {
+      onPartial: partial => {
+        setNeteaseData(partial);
+        setNeteaseLoading(false);
+      },
+    }).then(setNeteaseData).catch(() => setNeteaseData(null)).finally(() => setNeteaseLoading(false));
+  }, [playlist.id, isNetease]);
+
+  const handlePlayNeteaseSong = useCallback(async (song: Song, _idx: number) => {
+    if (!neteaseData) return;
+    const prepared = await prepareNeteaseQueueWindow(neteaseData.songs, _idx);
+    if (!prepared) return;
+    const { playable, queue, currentWindowIndex } = prepared;
+    const preparedById = new Map(queue.map(item => [item.id, item]));
+    setNeteaseData(prev => prev
+      ? { ...prev, songs: prev.songs.map(item => preparedById.get(item.id) || item) }
+      : prev
+    );
+    playSong(playable, queue);
+    prefetchNeteaseQueueUrls(queue, currentWindowIndex).catch(() => {});
+  }, [neteaseData, playSong]);
+
+  const handlePlayResolvedPlaylist = useCallback(async () => {
+    if (!isNetease) {
+      playPlaylist(playlist);
+      return;
+    }
+    if (!neteaseData) return;
+    for (let idx = 0; idx < neteaseData.songs.length; idx++) {
+      const prepared = await prepareNeteaseQueueWindow(neteaseData.songs, idx);
+      if (prepared) {
+        const { playable, queue, currentWindowIndex } = prepared;
+        const preparedById = new Map(queue.map(item => [item.id, item]));
+        setNeteaseData(prev => prev
+          ? { ...prev, songs: prev.songs.map(item => preparedById.get(item.id) || item) }
+          : prev
+        );
+        playSong(playable, queue);
+        prefetchNeteaseQueueUrls(queue, currentWindowIndex).catch(() => {});
+        return;
+      }
+    }
+  }, [isNetease, neteaseData, playPlaylist, playlist, playSong]);
 
   return (
     <div className="playlist-detail">
@@ -133,25 +233,29 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
               <button onClick={() => setIsEditing(false)}>{t('playlist.cancel')}</button>
             </div>
           ) : (
-            <h1 className="playlist-detail-title" onClick={() => { if (!isLikedPlaylist) { setEditName(playlist.name); setIsEditing(true); } }}>
+            <h1 className="playlist-detail-title" onClick={() => { if (!isLikedPlaylist && !isNetease) { setEditName(playlist.name); setIsEditing(true); } }}>
               {playlist.name}
             </h1>
           )}
           <p className="playlist-detail-desc">{playlist.description}</p>
           <p className="playlist-detail-meta">
-            {t('common.songCount', { count: playlist.songs.length })} · {t('common.durationApprox')} {formatDuration(totalDuration)}
-            {playlist.creator && <> · {playlist.creator}</>}
+            {t('common.songCount', { count: resolvedPlaylist.songs.length })} · {t('common.durationApprox')} {formatDuration(totalDuration)}
+            {resolvedPlaylist.creator && <> · {resolvedPlaylist.creator}</>}
           </p>
         </div>
       </div>
 
       <div className="playlist-detail-actions">
-        <button className="playlist-play-all" onClick={() => playPlaylist(playlist)}>
+        {isNetease && neteaseLoading ? (
+          <div className="playlist-detail-meta">{t('discover.loading')}</div>
+        ) : (
+        <button className="playlist-play-all" onClick={handlePlayResolvedPlaylist}>
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
             <path d="M5.7 3a.7.7 0 00-.7.7v16.6a.7.7 0 00.7.7l15.3-8.3a.7.7 0 000-1.2L5.7 3z"/>
           </svg>
         </button>
-        {availableSongs.length > 0 && (
+        )}
+        {!isNetease && availableSongs.length > 0 && (
           <button className="playlist-action-btn" onClick={() => setShowAddSongs(!showAddSongs)}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M12 3a1 1 0 011 1v7h7a1 1 0 110 2h-7v7a1 1 0 11-2 0v-7H4a1 1 0 110-2h7V4a1 1 0 011-1z"/>
@@ -159,7 +263,7 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
             {t('playlist.addSongs')}
           </button>
         )}
-        {!isLikedPlaylist && (
+        {!isLikedPlaylist && !isNetease && (
           <button className="playlist-action-btn danger" onClick={handleDelete}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M3 6h18v2H3V6zm2 2h14l-1 13H6L5 8zm4-4h6l1-1H8l1 1z"/>
@@ -207,11 +311,19 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
             <span className="track-col-action">{t('library.headerAction')}</span>
           </div>
           <div className="track-list-body">
-            {playlist.songs.length === 0 ? (
+            {resolvedPlaylist.songs.length === 0 ? (
               <div className="track-list-empty">{t('playlist.empty')}</div>
+            ) : (isNetease && neteaseLoading) ? (
+              <div className="discover-loading">{t('discover.loading')}</div>
             ) : (
-              playlist.songs.map((song, idx) => (
-                <div key={song.id} className="track-row" onClick={() => playPlaylist(playlist, idx)}>
+              resolvedPlaylist.songs.slice(0, visibleTrackCount).map((song, idx) => (
+                <div key={song.id} className="track-row" onClick={() => {
+                  if (isNetease && neteaseData) {
+                    handlePlayNeteaseSong(song, idx);
+                  } else {
+                    playPlaylist(resolvedPlaylist, idx);
+                  }
+                }}>
                   <span className="track-col-num">{idx + 1}</span>
                   <span className="track-col-title">
                     <div className="track-cover-mini" style={{ background: song.coverColor }} />
@@ -246,6 +358,14 @@ export function PlaylistDetail({ playlist, onBack }: PlaylistDetailProps) {
                   </span>
                 </div>
               ))
+            )}
+            {visibleTrackCount < resolvedPlaylist.songs.length && (
+              <button
+                className="playlist-action-btn"
+                onClick={() => setVisibleTrackCount(count => count + TRACK_RENDER_INCREMENT)}
+              >
+                加载更多 ({Math.min(visibleTrackCount, resolvedPlaylist.songs.length)}/{resolvedPlaylist.songs.length})
+              </button>
             )}
           </div>
         </div>

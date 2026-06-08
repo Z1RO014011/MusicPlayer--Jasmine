@@ -465,7 +465,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (audio.readyState >= 1) seekWhenReady();
     else audio.addEventListener('loadedmetadata', seekWhenReady, { once: true });
     return () => audio.removeEventListener('loadedmetadata', seekWhenReady);
-  }, [loaded, state.currentSong?.id]);
+  }, [loaded, state.currentSong?.audioUrl, state.currentSong?.id]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -550,7 +550,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         const res = await fetch(`${getBaseURL()}/song/url?id=${song.neteaseId}&level=standard${cookieParam}`);
         const json = await res.json();
         url = json.data?.[0]?.url || undefined;
-        if (url) song.audioUrl = url;
+        if (url) {
+          song.audioUrl = url;
+          if (stateRef.current.currentSong) stateRef.current.currentSong.audioUrl = url;
+        }
       } catch {}
     }
     if (!url) return;
