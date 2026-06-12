@@ -3,10 +3,10 @@ import { Song, Playlist } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 import { useI18n } from '../i18n/I18nContext';
 import { defaultSource } from '../lib/sources';
-import { getLoginStatus, setLoginCookie, getLoginCookie, getArtistSongs, getAlbumDetail, searchOnline, searchArtists, searchAlbums, getPlaylistCategories, getTopPlaylistsByCat, getSearchHot, getRecommendResource, type LoginQRStatus, type NeteaseArtist, type NeteaseAlbum, type PlaylistCategory, type SearchHotItem } from '../lib/neteaseApi';
+import { getLoginStatus, setLoginCookie, getLoginCookie, getArtistSongs, getArtistDetail, getAlbumDetail, searchOnline, searchArtists, searchAlbums, getPlaylistCategories, getTopPlaylistsByCat, getSearchHot, getRecommendResource, type LoginQRStatus, type NeteaseArtist, type NeteaseAlbum, type PlaylistCategory, type SearchHotItem } from '../lib/neteaseApi';
 import { startQrLoginSession, type QrLoginSession } from '../lib/neteaseLogin';
 import { Skeleton, SkeletonCard } from './Skeleton';
-import { hasImageCoverBackground } from './discoverArtistHero';
+import { hasImageCoverBackground, shouldHydrateArtistArtwork } from './discoverArtistHero';
 
 type DiscoverTab = 'search' | 'recommended' | 'charts';
 
@@ -203,9 +203,16 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
         resolved = matches.find(a => a.name === artist.name) || matches[0] || artist;
       }
       if (!resolved.id) throw new Error('Artist not found');
-      const songs = await getArtistSongs(resolved.id);
+      const resolvedId = resolved.id;
+      if (shouldHydrateArtistArtwork(resolved)) {
+        const artistDetail = await getArtistDetail(resolvedId);
+        if (artistDetail?.picUrl) {
+          resolved = { ...resolved, picUrl: artistDetail.picUrl };
+        }
+      }
+      const songs = await getArtistSongs(resolvedId);
       setSubViewPlaylist({
-        id: `artist-${resolved.id}`,
+        id: `artist-${resolvedId}`,
         name: resolved.name,
         description: '',
         coverColor: resolved.picUrl ? `url(${resolved.picUrl}) center/cover no-repeat` : 'linear-gradient(135deg, #667eea, #764ba2)',

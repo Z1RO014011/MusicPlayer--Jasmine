@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   extractImageUrlFromCoverColor,
   hasImageCoverBackground,
+  shouldHydrateArtistArtwork,
 } from './discoverArtistHero.ts';
 
 test('extracts artist image url from image-backed coverColor', () => {
@@ -39,5 +40,12 @@ test('detects whether coverColor contains an image background', () => {
   assert.equal(
     hasImageCoverBackground('linear-gradient(135deg, #667eea, #764ba2)'),
     false,
+  );
+});
+
+test('hydrates artist artwork when an artist id exists but picUrl is missing', () => {
+  assert.equal(
+    shouldHydrateArtistArtwork({ id: 53283, name: 'Drake', picUrl: '' }),
+    true,
   );
 });
