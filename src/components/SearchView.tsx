@@ -85,7 +85,10 @@ export function SearchView({ onSelectPlaylist }: SearchViewProps) {
                     <span className="track-col-num">{idx + 1}</span>
                     <span className="track-col-title">
                       <div className="track-cover-mini" style={{ background: song.coverColor }} />
-                      <div className="track-title-text">{song.title}</div>
+                      <div className="track-title-text">
+                        <div className="track-title-main">{song.title}</div>
+                        <div className="track-title-sub">{song.artist} · {song.album}</div>
+                      </div>
                     </span>
                     <span className="track-col-artist">{song.artist}</span>
                     <span className="track-col-album">{song.album}</span>

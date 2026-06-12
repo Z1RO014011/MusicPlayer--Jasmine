@@ -38,6 +38,8 @@ npm run dev:frontend
 ```
 
 > 在线功能依赖本地网易云 API 服务，默认地址为 `http://127.0.0.1:3000`。桌面模式会自动启动该服务。
+>
+> 如果前端和网易云 API 不是一起通过 `npm run dev` 启动，而是后端单独部署或跑在其他地址，请在启动前设置 `VITE_NETEASE_API_BASE_URL`，例如：`VITE_NETEASE_API_BASE_URL=http://your-api-host:3000 npm run dev:frontend`。
 
 ### 桌面应用（下载安装包）
 

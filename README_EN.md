@@ -38,6 +38,8 @@ npm run dev:frontend
 ```
 
 > Online features depend on the local Netease API service at `http://127.0.0.1:3000`. Electron mode starts that service automatically.
+>
+> If the frontend is not started together with the NetEase API via `npm run dev`, and the API is hosted separately, set `VITE_NETEASE_API_BASE_URL` before starting the frontend, for example: `VITE_NETEASE_API_BASE_URL=http://your-api-host:3000 npm run dev:frontend`.
 
 ### Desktop App (Download Installer)
 
