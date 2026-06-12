@@ -42,6 +42,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.app-mobile-sidebar-open {
+  overflow: hidden;
+}
+
 h1, h2, h3, h4, h5, h6, .hero-title, .section-title, .sidebar-logo-text,
 .playlist-detail-title, .nowplaying-view-title, .library-title,
 .playlist-card-title, .settings-title, .empty-title, .modal-title {

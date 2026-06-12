@@ -9,6 +9,13 @@ import type {
 
 // ==================== Shared helpers ====================
 
+const LOCAL_API_PORT = 3000;
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+
+function normalizeBaseURL(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
 function getCookieParam(): string {
   const cookie = getLoginCookie();
   return cookie ? `&cookie=${encodeURIComponent(cookie)}` : '';
@@ -17,6 +24,14 @@ function getCookieParam(): string {
 export function getBaseURL(): string {
   if (window.electronAPI?.apiPort) {
     return `http://127.0.0.1:${window.electronAPI.apiPort}`;
+  }
+  const configuredBaseURL = import.meta.env.VITE_NETEASE_API_BASE_URL?.trim();
+  if (configuredBaseURL) {
+    return normalizeBaseURL(configuredBaseURL);
+  }
+  if (typeof window !== 'undefined' && LOOPBACK_HOSTS.has(window.location.hostname)) {
+    const host = window.location.hostname === '::1' ? '[::1]' : window.location.hostname;
+    return `http://${host}:${LOCAL_API_PORT}`;
   }
   return '/api';
 }

@@ -16,6 +16,8 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { getLoginStatus, getLoginCookie, getUserPlaylists, setLoginCookie } from './lib/neteaseApi';
 import './App.css';
 
+const MOBILE_SIDEBAR_QUERY = '(max-width: 1024px)';
+
 interface ArtistOpenRequest {
   id?: number;
   name: string;
@@ -26,6 +28,10 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<ViewType>('discover');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileLayout, setIsMobileLayout] = useState(() => (
+    typeof window !== 'undefined' ? window.matchMedia(MOBILE_SIDEBAR_QUERY).matches : false
+  ));
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [prevView, setPrevView] = useState<ViewType>('discover');
   const [artistOpenRequest, setArtistOpenRequest] = useState<ArtistOpenRequest | null>(null);
   const [neteaseUserId, setNeteaseUserId] = useState<number | null>(null);
@@ -67,6 +73,51 @@ function AppContent() {
       }
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const mediaQuery = window.matchMedia(MOBILE_SIDEBAR_QUERY);
+    const syncLayout = (matches: boolean) => {
+      setIsMobileLayout(matches);
+      if (!matches) setMobileSidebarOpen(false);
+    };
+
+    syncLayout(mediaQuery.matches);
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      syncLayout(event.matches);
+    };
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileLayout) return undefined;
+    setMobileSidebarOpen(false);
+    return undefined;
+  }, [currentView, selectedPlaylistId, isMobileLayout]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+    document.body.classList.toggle('app-mobile-sidebar-open', isMobileLayout && mobileSidebarOpen);
+    return () => document.body.classList.remove('app-mobile-sidebar-open');
+  }, [isMobileLayout, mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!isMobileLayout || !mobileSidebarOpen || typeof window === 'undefined') return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileSidebarOpen(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileLayout, mobileSidebarOpen]);
 
   const handleViewChange = useCallback((view: ViewType) => {
     setCurrentView(view);
@@ -154,19 +205,44 @@ function AppContent() {
   }
 
   return (
-    <div className={`app ${currentView === 'nowplaying' ? 'nowplaying-active' : ''}`}>
+    <div
+      className={[
+        'app',
+        currentView === 'nowplaying' ? 'nowplaying-active' : '',
+        isMobileLayout ? 'app-mobile-layout' : '',
+        mobileSidebarOpen ? 'sidebar-open' : '',
+      ].filter(Boolean).join(' ')}
+    >
       <div className="app-body">
         {currentView !== 'nowplaying' && (
           <>
+            {isMobileLayout && mobileSidebarOpen && (
+              <button
+                type="button"
+                className="sidebar-overlay"
+                onClick={() => setMobileSidebarOpen(false)}
+                aria-label="Close navigation"
+              />
+            )}
             <Sidebar
               currentView={currentView === 'playlist' ? 'library' : currentView}
               onViewChange={handleViewChange}
               onSelectPlaylist={handleSelectPlaylist}
               onSelectNeteasePlaylist={handleSelectNeteasePlaylist}
-              collapsed={sidebarCollapsed}
+              collapsed={isMobileLayout ? false : sidebarCollapsed}
               neteasePlaylists={neteasePlaylists}
             />
-            <button className="sidebar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+            <button
+              type="button"
+              className={`sidebar-toggle ${mobileSidebarOpen ? 'active' : ''}`}
+              onClick={() => (
+                isMobileLayout
+                  ? setMobileSidebarOpen(open => !open)
+                  : setSidebarCollapsed(collapsed => !collapsed)
+              )}
+              aria-label={isMobileLayout ? 'Toggle navigation drawer' : 'Toggle sidebar'}
+              aria-expanded={isMobileLayout ? mobileSidebarOpen : !sidebarCollapsed}
+            >
               <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
               </svg>
