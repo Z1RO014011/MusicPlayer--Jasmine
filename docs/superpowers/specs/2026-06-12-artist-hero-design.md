@@ -1,133 +1,133 @@
-# Artist Detail Hero Background Design
+# 歌手详情页 Hero 背景设计
 
-## Goal
+## 目标
 
-Add a dedicated hero section to the artist detail view in the discover page so the page visually echoes the existing now playing detail screen. The hero should use the artist image as a blurred atmospheric background while keeping the song list area clear and highly readable.
+为发现页中的歌手详情视图增加一个专门的 Hero 区域，让它在视觉上呼应现有的歌曲详情页。这个 Hero 需要使用歌手图片作为带模糊氛围感的背景，同时保持歌曲列表区域清晰、易读。
 
-## Scope
+## 范围
 
-In scope:
-- Artist detail sub-view opened from search results or artist links
-- A top hero area with artist image background when `picUrl` is available
-- A graceful visual fallback when no artist image is available
-- Responsive behavior for desktop and narrower widths
+包含在本次改动中的内容：
+- 从搜索结果或歌手链接打开的歌手详情子视图
+- 在存在 `picUrl` 时显示歌手图片背景的顶部 Hero 区域
+- 在没有歌手图片时的优雅回退方案
+- 桌面端和较窄宽度下的响应式表现
 
-Out of scope:
-- Reworking the full artist detail page layout
-- Adding new API calls or data sources
-- Applying full-page background art behind the entire track list
-- Changing row behavior, playback behavior, or list interactions
+不包含在本次改动中的内容：
+- 重做整个歌手详情页布局
+- 增加新的接口请求或数据来源
+- 将整张歌手背景图铺到整个歌曲列表后方
+- 修改行点击、播放或列表交互逻辑
 
-## Current State
+## 当前状态
 
-The artist detail page is rendered through the `subView` branch inside `DiscoverView.tsx`. When an artist is opened, the component stores a playlist-like object in `subViewPlaylist`, with `coverColor` already derived from the artist `picUrl` when available.
+歌手详情页目前由 `DiscoverView.tsx` 中的 `subView` 分支渲染。打开歌手时，组件会把一个类播放列表对象存入 `subViewPlaylist`，其中 `coverColor` 在有歌手图片时已经由 `picUrl` 派生而来。
 
-The now playing screen already uses a layered background approach:
-- one layer for the image/background source
-- one overlay layer for contrast and readability
+歌曲详情页目前已经采用分层背景方案：
+- 一层作为图片或背景来源
+- 一层作为提升可读性的遮罩层
 
-The artist detail screen currently renders only a standard header row and then the track list, so it lacks the same visual depth.
+而歌手详情页现在只有一个普通的页头和歌曲列表，因此缺少同等级的视觉层次。
 
-## Proposed Approach
+## 方案概述
 
-### Layout
+### 布局
 
-Add a new artist hero block above the existing artist track list. The hero should sit inside the discover sub-view and contain:
-- the back button
-- the artist title
-- optional lightweight metadata if the current layout naturally supports it
+在现有歌手歌曲列表上方新增一个 Hero 区块。这个 Hero 位于发现页子视图内部，包含：
+- 返回按钮
+- 歌手标题
+- 如果当前布局自然适合，可补充轻量级元信息
 
-The hero should have a moderate height so the track list still begins within the first viewport on desktop.
+Hero 高度应控制在中等范围，确保桌面端首屏仍能看到歌曲列表的起始部分。
 
-### Background Treatment
+### 背景处理
 
-When an artist image exists:
-- use the existing artist image source already stored in `subViewPlaylist.coverColor`
-- render a dedicated background layer with that image
-- apply blur and scale so the image reads as atmosphere rather than a literal photo card
-- add a darker gradient overlay above the image for text contrast
+当歌手图片存在时：
+- 复用已经存储在 `subViewPlaylist.coverColor` 中的歌手图片来源
+- 渲染一层专门的背景图层
+- 对图片做放大与模糊处理，使其更偏氛围背景而不是直接展示原图卡片
+- 在图片上方叠加更深的渐变遮罩，保证文字对比度
 
-When an artist image does not exist:
-- fall back to the current gradient-based visual treatment
-- keep the hero structure identical so layout does not shift
+当歌手图片不存在时：
+- 回退到当前基于渐变色的视觉方案
+- 保持 Hero 结构一致，避免布局抖动
 
-### List Area
+### 列表区域
 
-Keep the song list outside the heavy image treatment. The list area should remain visually close to the current discover table styling so:
-- track readability stays strong
-- hover and action affordances remain clear
-- the page does not become overly busy while scrolling
+歌曲列表不进入重背景区域。列表区尽量保持接近当前发现页表格样式，以保证：
+- 歌曲信息保持高可读性
+- hover 和操作按钮的可辨识度不受影响
+- 页面滚动时不会因为背景过重而显得杂乱
 
-## Component Changes
+## 组件改动
 
 ### `src/components/DiscoverView.tsx`
 
-Update the artist sub-view rendering branch to:
-- detect whether the current `subViewPlaylist` is an artist detail page with image-backed `coverColor`
-- render a new hero container before the track list
-- keep the back button behavior unchanged
-- keep the existing track rows and actions unchanged
+更新歌手详情子视图分支，使其能够：
+- 判断当前 `subViewPlaylist` 是否为带图片背景的歌手详情页
+- 在歌曲列表前渲染新的 Hero 容器
+- 保持返回按钮行为不变
+- 保持现有歌曲行和操作按钮行为不变
 
-Implementation should avoid introducing a second data fetch. The hero must reuse the image information already resolved during `openArtistDetail`.
+实现时不应引入第二次数据请求。Hero 必须复用 `openArtistDetail` 已经解析出的图片信息。
 
 ### `src/App.css`
 
-Add artist-detail-specific classes for:
-- the hero container
-- the hero background layer
-- the hero overlay layer
-- the hero content container
-- responsive sizing and spacing
+新增歌手详情相关样式类，用于：
+- Hero 容器
+- Hero 背景层
+- Hero 遮罩层
+- Hero 内容容器
+- 响应式尺寸与间距
 
-Styling should align with existing rounded corners, spacing, and soft-glass presentation already used in the app.
+整体样式应与应用现有的圆角、留白和柔和玻璃感体系保持一致。
 
-## Data Flow
+## 数据流
 
-1. User opens an artist from search results or another artist link.
-2. `openArtistDetail` resolves the artist and stores a playlist-like object in `subViewPlaylist`.
-3. The existing `coverColor` field continues to hold either:
-   - an image-backed background string derived from `picUrl`, or
-   - a gradient fallback
-4. The artist detail renderer derives hero background styling from that existing field.
-5. The track list renders below the hero without changing playback logic.
+1. 用户从搜索结果或其他歌手链接打开歌手详情。
+2. `openArtistDetail` 解析歌手信息，并把类播放列表对象存入 `subViewPlaylist`。
+3. 现有 `coverColor` 字段继续承载以下两种值之一：
+   - 由 `picUrl` 派生出的图片背景字符串
+   - 渐变背景回退值
+4. 歌手详情渲染逻辑从这个既有字段中派生 Hero 背景样式。
+5. 歌曲列表继续渲染在 Hero 下方，不改动播放逻辑。
 
-## Error Handling And Fallbacks
+## 错误处理与回退
 
-- If the artist lookup succeeds but no `picUrl` exists, render the same hero layout with the gradient fallback.
-- If artist loading fails, preserve the current failure handling path.
-- If the image URL is slow or unavailable, the overlay and fallback background should keep the title readable.
+- 如果歌手查询成功但没有 `picUrl`，仍然渲染同结构的 Hero，只是使用渐变背景回退。
+- 如果歌手加载失败，保持当前失败处理路径不变。
+- 如果图片加载较慢或暂时不可用，遮罩层与回退背景仍需保证标题可读。
 
-## Testing Strategy
+## 测试策略
 
-### Behavior
+### 行为验证
 
-- Opening an artist with a valid image shows the hero background.
-- Opening an artist without a valid image shows the fallback hero styling.
-- Returning from the artist detail view still works exactly as before.
+- 打开带有效图片的歌手时，Hero 背景能够显示。
+- 打开没有有效图片的歌手时，显示回退 Hero 样式。
+- 从歌手详情返回时，行为与当前完全一致。
 
-### Visual Checks
+### 视觉检查
 
-- The artist title remains readable over the hero background.
-- The back button remains visible and clickable.
-- The song list starts cleanly below the hero and keeps its current interaction quality.
-- On narrower widths, the hero height and title spacing remain balanced.
+- 歌手标题在 Hero 背景上保持清晰可读。
+- 返回按钮清晰可见且可点击。
+- 歌曲列表在 Hero 下方自然衔接，并保持当前交互质量。
+- 在较窄宽度下，Hero 高度与标题间距仍然平衡。
 
-### Regression Focus
+### 回归重点
 
-- No changes to song playback from artist detail rows
-- No changes to queue actions or like actions
-- No layout breakage for album detail or other discover sub-views
+- 不影响歌手详情列表中的歌曲播放行为
+- 不影响稍后播放和喜欢操作
+- 不破坏专辑详情或其他发现页子视图布局
 
-## Risks
+## 风险
 
-- Reusing a `coverColor` string that may contain either gradients or image backgrounds requires careful parsing so hero styles are robust in both cases.
-- Blur and overlay tuning may need small visual iteration to avoid making the header too dark or too washed out.
-- Shared sub-view code for artists and albums must stay clearly separated so the new hero only affects artist detail.
+- `coverColor` 现在可能同时承载渐变和图片背景字符串，实现时需要稳妥解析，确保两种情况都可靠。
+- 模糊与遮罩强度可能需要少量视觉微调，避免页头过暗或过灰。
+- 歌手和专辑详情共用部分子视图逻辑，实现时需要明确隔离，保证新 Hero 只作用于歌手详情。
 
-## Implementation Plan Summary
+## 实现摘要
 
-Recommended path:
-1. Add an artist-only hero wrapper in the discover sub-view.
-2. Reuse the existing artist image data for the hero background.
-3. Add layered CSS for blur, overlay, and content spacing.
-4. Verify artist detail, album detail, and responsive behavior locally in the browser.
+推荐落地步骤：
+1. 在发现页子视图中增加仅歌手可见的 Hero 包裹层。
+2. 复用现有歌手图片数据作为 Hero 背景来源。
+3. 增加分层 CSS，完成模糊、遮罩与内容间距。
+4. 在本地浏览器中验证歌手详情、专辑详情和响应式表现。
