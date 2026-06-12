@@ -2036,6 +2036,10 @@
   .download-note-steps {
     justify-content: flex-start;
   }
+
+  .discover-artist-hero-content h2 {
+    font-size: 38px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -2115,6 +2119,24 @@
     padding: 0 16px;
   }
 
+  .discover-artist-detail {
+    gap: 20px;
+  }
+
+  .discover-artist-hero {
+    min-height: 218px;
+    border-radius: 20px;
+  }
+
+  .discover-artist-hero-content {
+    min-height: 218px;
+    padding: 20px 20px 24px;
+  }
+
+  .discover-artist-hero-content h2 {
+    font-size: 32px;
+  }
+
   .player-bar {
     grid-template-columns: 1fr 1fr;
     height: auto;
@@ -2178,6 +2200,24 @@
 
   .download-version-number {
     font-size: 32px;
+  }
+
+  .discover-artist-detail {
+    gap: 16px;
+  }
+
+  .discover-artist-hero {
+    min-height: 190px;
+    border-radius: 18px;
+  }
+
+  .discover-artist-hero-content {
+    min-height: 190px;
+    padding: 16px 16px 20px;
+  }
+
+  .discover-artist-hero-content h2 {
+    font-size: 28px;
   }
 }
 
@@ -3226,6 +3266,102 @@
   font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.discover-artist-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.discover-artist-hero {
+  position: relative;
+  min-height: 248px;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.28));
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.22);
+}
+
+.discover-artist-hero-bg {
+  position: absolute;
+  inset: -24px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  transform: scale(1.06);
+}
+
+.discover-artist-hero-bg.has-image {
+  filter: blur(8px) saturate(1.04);
+  opacity: 0.98;
+}
+
+.discover-artist-hero-bg.is-fallback {
+  filter: saturate(1.05);
+  opacity: 1;
+}
+
+.discover-artist-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 16, 22, 0.18), rgba(7, 16, 22, 0.74)),
+    radial-gradient(circle at top left, rgba(83, 230, 190, 0.2), transparent 34%);
+}
+
+.discover-artist-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 248px;
+  padding: 22px 24px 28px;
+}
+
+.discover-back-btn-hero {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f4fbff;
+  backdrop-filter: blur(16px);
+}
+
+.discover-back-btn-hero:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.discover-artist-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.discover-artist-hero-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(244, 251, 255, 0.72);
+}
+
+.discover-artist-hero-content h2 {
+  margin: 0;
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  color: #f4fbff;
+  text-wrap: balance;
+}
+
+.discover-artist-hero-meta {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(244, 251, 255, 0.82);
 }
 
 .discover-back-btn {

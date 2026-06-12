@@ -6,6 +6,7 @@ import { defaultSource } from '../lib/sources';
 import { getLoginStatus, setLoginCookie, getLoginCookie, getArtistSongs, getAlbumDetail, searchOnline, searchArtists, searchAlbums, getPlaylistCategories, getTopPlaylistsByCat, getSearchHot, getRecommendResource, type LoginQRStatus, type NeteaseArtist, type NeteaseAlbum, type PlaylistCategory, type SearchHotItem } from '../lib/neteaseApi';
 import { startQrLoginSession, type QrLoginSession } from '../lib/neteaseLogin';
 import { Skeleton, SkeletonCard } from './Skeleton';
+import { hasImageCoverBackground } from './discoverArtistHero';
 
 type DiscoverTab = 'search' | 'recommended' | 'charts';
 
@@ -360,89 +361,145 @@ export function DiscoverView({ artistOpenRequest }: DiscoverViewProps) {
   // --- Sub-view ---
   if (subView) {
     const isAlbumDetail = subViewPlaylist?.id?.startsWith('album-');
+    const isArtistDetail = Boolean(subViewPlaylist?.id?.startsWith('artist-'));
     const albumNeteaseId = isAlbumDetail ? Number(subViewPlaylist!.id.replace(/^album-/, '')) : 0;
     const albumSaved = isAlbumDetail && isAlbumSaved(albumNeteaseId);
+    const artistHeroBackground = subViewPlaylist?.coverColor || 'linear-gradient(135deg, #667eea, #764ba2)';
+    const artistHeroHasImage = hasImageCoverBackground(subViewPlaylist?.coverColor);
+    const handleCloseSubView = () => {
+      setSubView(null);
+      setSubViewPlaylist(null);
+    };
+
     return (
       <div className="discover-view">
-        <div className="discover-sub-header">
-          <button className="discover-back-btn" onClick={() => { setSubView(null); setSubViewPlaylist(null); }}>
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-          </button>
-          <h2>{subView.name}</h2>
-          {isAlbumDetail && (
-            <button
-              className={`album-toggle-btn ${albumSaved ? 'saved' : ''}`}
-              onClick={() => {
-                toggleAlbum({
-                  neteaseId: albumNeteaseId,
-                  name: subViewPlaylist!.name,
-                  artist: subViewPlaylist!.description || '',
-                  picUrl: subViewPlaylist!.coverColor.replace(/^url\(["']?(.*?)["']?\).*$/, '$1') || '',
-                  coverColor: subViewPlaylist!.coverColor,
-                });
-              }}
-              title={albumSaved ? t('album.remove') : t('album.save')}
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill={albumSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
-              </svg>
-              <span>{albumSaved ? t('album.remove') : t('album.save')}</span>
-            </button>
-          )}
-        </div>
-        {subViewLoading ? (
-          <div className="skeleton-loading-grid">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="track-row" style={{ gridTemplateColumns: '40px 1fr 1fr 1fr 36px 60px 40px', pointerEvents: 'none' }}>
-                <Skeleton width={20} height={14} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Skeleton width={40} height={40} borderRadius={10} />
-                  <Skeleton width={100} height={14} />
+        {isArtistDetail ? (
+          <div className="discover-artist-detail">
+            <div className="discover-artist-hero">
+              <div
+                className={`discover-artist-hero-bg ${artistHeroHasImage ? 'has-image' : 'is-fallback'}`}
+                style={{ background: artistHeroBackground }}
+              />
+              <div className="discover-artist-hero-overlay" />
+              <div className="discover-artist-hero-content">
+                <button className="discover-back-btn discover-back-btn-hero" onClick={handleCloseSubView}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                </button>
+                <div className="discover-artist-hero-text">
+                  <p className="discover-artist-hero-kicker">{t('discover.artists')}</p>
+                  <h2>{subView.name}</h2>
+                  {subViewPlaylist ? (
+                    <p className="discover-artist-hero-meta">
+                      {subViewPlaylist.songs.length} {t('discover.songs')}
+                    </p>
+                  ) : null}
                 </div>
-                <Skeleton width={80} height={12} />
-                <Skeleton width={60} height={12} />
-                <Skeleton width={20} height={14} />
-                <Skeleton width={36} height={14} />
               </div>
-            ))}
+            </div>
+            {subViewLoading ? (
+              <div className="skeleton-loading-grid">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="track-row" style={{ gridTemplateColumns: '40px 1fr 1fr 1fr 36px 60px 40px', pointerEvents: 'none' }}>
+                    <Skeleton width={20} height={14} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Skeleton width={40} height={40} borderRadius={10} />
+                      <Skeleton width={100} height={14} />
+                    </div>
+                    <Skeleton width={80} height={12} />
+                    <Skeleton width={60} height={12} />
+                    <Skeleton width={20} height={14} />
+                    <Skeleton width={36} height={14} />
+                  </div>
+                ))}
+              </div>
+            )
+              : subViewPlaylist ? <div className="search-song-list">{subViewPlaylist.songs.map((s, i) => renderSongRow(s, i, subViewPlaylist.songs))}</div>
+              : <div className="discover-loading">{t('discover.loadFailed')}</div>
+            }
           </div>
-        )
-          : subViewPlaylist ? <div className="search-song-list">{subViewPlaylist.songs.map((s, i) => (
-            <div key={s.id} className="track-row" onClick={() => handlePlayOnlineSong(s, subViewPlaylist.songs)}>
-              <span className="track-col-num">{i + 1}</span>
-              <span className="track-col-title">
-                <div className="track-cover-mini" style={{ background: s.coverColor }} />
-                <div className="track-title-text">
-                  <div className="track-title-main">{s.title}</div>
-                  <div className="track-title-sub">{s.artist}</div>
-                </div>
-              </span>
-              <span className="track-col-artist">{s.artist}</span>
-              <span className="track-col-album">{s.album}</span>
-              <span className="track-col-like">
+        ) : (
+          <>
+            <div className="discover-sub-header">
+              <button className="discover-back-btn" onClick={handleCloseSubView}>
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+              </button>
+              <h2>{subView.name}</h2>
+              {isAlbumDetail && (
                 <button
-                  className={`track-like-btn ${isLiked(s.id) ? 'liked' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); toggleLike(s); }}
-                  title={isLiked(s.id) ? t('player.unlike') : t('player.like')}
+                  className={`album-toggle-btn ${albumSaved ? 'saved' : ''}`}
+                  onClick={() => {
+                    toggleAlbum({
+                      neteaseId: albumNeteaseId,
+                      name: subViewPlaylist!.name,
+                      artist: subViewPlaylist!.description || '',
+                      picUrl: subViewPlaylist!.coverColor.replace(/^url\(["']?(.*?)["']?\).*$/, '$1') || '',
+                      coverColor: subViewPlaylist!.coverColor,
+                    });
+                  }}
+                  title={albumSaved ? t('album.remove') : t('album.save')}
                 >
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill={isLiked(s.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill={albumSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                     <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
                   </svg>
+                  <span>{albumSaved ? t('album.remove') : t('album.save')}</span>
                 </button>
-              </span>
-              <span className="track-col-duration">{fmtTime(s.duration)}</span>
-              <span className="track-col-action">
-                <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); playNext(s); }} title={t('discover.playNext')}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l8-7-8-7zm9 0h2v14h-2V5z"/></svg>
-                </button>
-                <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); addToQueue(s); }} title={t('discover.addToQueue')}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                </button>
-              </span>
+              )}
             </div>
-          ))}</div>
-          : <div className="discover-loading">{t('discover.loadFailed')}</div>
-        }
+            {subViewLoading ? (
+              <div className="skeleton-loading-grid">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="track-row" style={{ gridTemplateColumns: '40px 1fr 1fr 1fr 36px 60px 40px', pointerEvents: 'none' }}>
+                    <Skeleton width={20} height={14} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Skeleton width={40} height={40} borderRadius={10} />
+                      <Skeleton width={100} height={14} />
+                    </div>
+                    <Skeleton width={80} height={12} />
+                    <Skeleton width={60} height={12} />
+                    <Skeleton width={20} height={14} />
+                    <Skeleton width={36} height={14} />
+                  </div>
+                ))}
+              </div>
+            )
+              : subViewPlaylist ? <div className="search-song-list">{subViewPlaylist.songs.map((s, i) => (
+                <div key={s.id} className="track-row" onClick={() => handlePlayOnlineSong(s, subViewPlaylist.songs)}>
+                  <span className="track-col-num">{i + 1}</span>
+                  <span className="track-col-title">
+                    <div className="track-cover-mini" style={{ background: s.coverColor }} />
+                    <div className="track-title-text">
+                      <div className="track-title-main">{s.title}</div>
+                      <div className="track-title-sub">{s.artist}</div>
+                    </div>
+                  </span>
+                  <span className="track-col-artist">{s.artist}</span>
+                  <span className="track-col-album">{s.album}</span>
+                  <span className="track-col-like">
+                    <button
+                      className={`track-like-btn ${isLiked(s.id) ? 'liked' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); toggleLike(s); }}
+                      title={isLiked(s.id) ? t('player.unlike') : t('player.like')}
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill={isLiked(s.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                      </svg>
+                    </button>
+                  </span>
+                  <span className="track-col-duration">{fmtTime(s.duration)}</span>
+                  <span className="track-col-action">
+                    <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); playNext(s); }} title={t('discover.playNext')}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 5v14l8-7-8-7zm9 0h2v14h-2V5z"/></svg>
+                    </button>
+                    <button className="add-queue-btn" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); addToQueue(s); }} title={t('discover.addToQueue')}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    </button>
+                  </span>
+                </div>
+              ))}</div>
+              : <div className="discover-loading">{t('discover.loadFailed')}</div>
+            }
+          </>
+        )}
       </div>
     );
   }
