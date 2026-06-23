@@ -1207,6 +1207,207 @@
   padding-top: 8px;
 }
 
+.history-section {
+  margin-bottom: 40px;
+}
+
+.history-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.history-section-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.history-section-subtitle {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.history-summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 108px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.history-summary-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.history-summary-value {
+  color: var(--text-primary);
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.history-analytics-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 12px;
+}
+
+.history-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.history-panel-header {
+  margin-bottom: 16px;
+}
+
+.history-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.history-inline-state {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.history-inline-error {
+  min-height: auto;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.history-trend-chart {
+  height: 220px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.history-trend-bar-group {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-trend-bar-wrap {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 2px;
+}
+
+.history-trend-bar {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, rgba(163, 227, 255, 0.95) 0%, rgba(67, 167, 255, 0.65) 100%);
+  min-height: 6px;
+}
+
+.history-trend-value {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.history-trend-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.history-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-ranking-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.history-ranking-item.is-clickable {
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.history-ranking-item.is-clickable:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.history-ranking-index {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.history-ranking-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-ranking-main strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-ranking-main small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-ranking-meta {
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .history-group {
   margin-bottom: 32px;
 }
@@ -1223,6 +1424,49 @@
   padding: 64px 0;
   color: var(--text-secondary);
   font-size: 15px;
+}
+
+.history-played-at {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.track-row.is-disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
+@media (max-width: 960px) {
+  .history-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .history-section-header {
+    align-items: flex-start;
+  }
+
+  .history-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-summary-card {
+    min-height: 88px;
+  }
+
+  .history-summary-value {
+    font-size: 22px;
+  }
+
+  .history-trend-chart {
+    height: 180px;
+    gap: 6px;
+  }
 }
 
 .create-playlist-btn {

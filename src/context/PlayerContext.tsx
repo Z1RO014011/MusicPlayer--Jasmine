@@ -3,7 +3,9 @@ import { PlayerState, Song, Playlist, LyricLine, SavedAlbum } from '../types';
 import { gradientColors } from '../data';
 import { saveAudioFile, saveAudioData, loadAudioFile, deleteAudioFile, saveSongs, loadSongs, savePlaylists, loadPlaylists, saveAlbums, loadAlbums, savePlayHistory, loadPlayHistory, type PlayRecord } from '../lib/db';
 import { extractMetadata } from '../lib/metadata';
+import { recordPlayEvent } from '../lib/analyticsApi';
 import { getBaseURL, getLoginCookie, getLyrics } from '../lib/neteaseApi';
+import { shouldRestoreAudioState } from '../lib/playbackRestore.js';
 import { useI18n } from '../i18n/I18nContext';
 
 type PlayerAction =
@@ -273,6 +275,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const dataLoadedRef = useRef(false);
   stateRef.current = state;
 
+  const recordPlayback = useCallback((song: Song) => {
+    const playedAt = Date.now();
+    setPlayHistory(prev => {
+      const next = [{ songId: song.id, playedAt }, ...prev].slice(0, 500);
+      savePlayHistory(next);
+      return next;
+    });
+    recordPlayEvent(song, playedAt).catch(() => {});
+  }, []);
+
   // Load persisted data on mount
   useEffect(() => {
     if (loadedRef.current) return;
@@ -449,11 +461,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!loaded || state.isPlaying || !state.currentSong?.audioUrl) return;
+    if (!shouldRestoreAudioState({
+      loaded,
+      isPlaying: state.isPlaying,
+      audioUrl: state.currentSong?.audioUrl || '',
+      currentTime: state.currentTime,
+    })) return;
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.src !== state.currentSong.audioUrl) {
-      audio.src = state.currentSong.audioUrl;
+    const audioUrl = state.currentSong?.audioUrl;
+    if (!audioUrl) return;
+    if (audio.src !== audioUrl) {
+      audio.src = audioUrl;
       audio.load();
     }
     const restoreTime = Math.max(0, state.currentTime || 0);
@@ -465,7 +484,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (audio.readyState >= 1) seekWhenReady();
     else audio.addEventListener('loadedmetadata', seekWhenReady, { once: true });
     return () => audio.removeEventListener('loadedmetadata', seekWhenReady);
-  }, [loaded, state.currentSong?.audioUrl, state.currentSong?.id]);
+  }, [loaded, state.currentSong?.audioUrl, state.currentSong?.id, state.currentTime, state.isPlaying]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -489,6 +508,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const nextSong = s.queue[nextIndex];
       if (nextSong && playerAudio) {
         dispatch({ type: 'PLAY_SONG', song: nextSong, queue: s.queue });
+        recordPlayback(nextSong);
         if (nextSong.audioUrl) {
           if (playerAudio.src !== nextSong.audioUrl) {
             playerAudio.src = nextSong.audioUrl;
@@ -531,7 +551,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       audio.removeEventListener('play', onPlay);
       audio.removeEventListener('pause', onPause);
     };
-  }, []);
+  }, [recordPlayback]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -580,9 +600,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const song = playlist.songs[startIndex];
     if (song) {
       dispatch({ type: 'PLAY_SONG', song, playlist });
+      recordPlayback(song);
       initAudio(song);
     }
-  }, []);
+  }, [recordPlayback]);
 
   const playSong = useCallback((song: Song, context?: Song[]) => {
     if (context && context.length > 0) {
@@ -590,14 +611,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else {
       dispatch({ type: 'PLAY_SONG', song });
     }
+    recordPlayback(song);
     initAudio(song);
-    // Record to play history
-    setPlayHistory(prev => {
-      const next = [{ songId: song.id, playedAt: Date.now() }, ...prev].slice(0, 500);
-      savePlayHistory(next);
-      return next;
-    });
-  }, []);
+  }, [recordPlayback]);
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
@@ -657,6 +673,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const currentQueue = stateRef.current.queue;
     const queueContext = currentQueue.some(s => s.id === song.id) ? currentQueue : undefined;
     dispatch({ type: 'PLAY_SONG', song: song, queue: queueContext });
+    recordPlayback(song);
     if (sameTrack) {
       // Same track: just seek to 0, keep playing
       audio.currentTime = 0;
@@ -692,7 +709,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           }
         }).catch(() => {});
     }
-  }, []);
+  }, [recordPlayback]);
 
   const nextTrack = useCallback(() => {
     const audio = audioRef.current;
