@@ -47,13 +47,13 @@ No Node.js required — download and run the installer for your platform:
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64.dmg) | DMG installer |
-| macOS (Apple Silicon) | [Jasmine-2.0.0-arm64-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-arm64-mac.zip) | ZIP portable |
-| macOS (Intel x64) | [Jasmine-2.0.0.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0.dmg) | DMG installer |
-| macOS (Intel x64) | [Jasmine-2.0.0-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine-2.0.0-mac.zip) | ZIP portable |
-| Windows (x64) | [Jasmine.Setup.2.0.0.exe](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0/Jasmine.Setup.2.0.0.exe) | NSIS installer |
+| macOS (Apple Silicon) | [Jasmine-2.1.0-arm64.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.1.0/Jasmine-2.1.0-arm64.dmg) | DMG installer |
+| macOS (Apple Silicon) | [Jasmine-2.1.0-arm64-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.1.0/Jasmine-2.1.0-arm64-mac.zip) | ZIP portable |
+| macOS (Intel x64) | [Jasmine-2.1.0.dmg](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.1.0/Jasmine-2.1.0.dmg) | DMG installer |
+| macOS (Intel x64) | [Jasmine-2.1.0-mac.zip](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.1.0/Jasmine-2.1.0-mac.zip) | ZIP portable |
+| Windows (x64) | [Jasmine.Setup.2.1.0.exe](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.1.0/Jasmine.Setup.2.1.0.exe) | NSIS installer |
 
-> No Linux AppImage is uploaded for v2.0.0 yet. See the [Release page](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/tag/v2.0.0) for all current assets.
+> No Linux AppImage is uploaded for v2.1.0 yet. See the [Release page](https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/tag/v2.1.0) for all current assets.
 
 > After downloading, open and run directly. On first launch, macOS users need to go to **System Settings → Privacy & Security** and click "Open Anyway".
 

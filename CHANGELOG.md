@@ -4,7 +4,7 @@
 
 ---
 
-## v2.1 — 嘻哈垂直方向基建（2026-06-07）
+## v2.1.0 — 嘻哈垂直方向基建（2026-06-07）
 
 ### 网易云 API 扩展
 - 新增 13 个 API 封装：`getSimiSong`、`getSimiArtist`、`getArtistDetail`、`getArtistDesc`、`getArtistTopSongs`、`getAlbumFullDetail`、`getUserPlaylists`、`getUserRecord`、`getUserSubcount`、`getUserDetail`、`getUserFollows`、`getUserAlbumSublist`、`getUserEvents`

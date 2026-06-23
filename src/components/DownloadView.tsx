@@ -17,11 +17,11 @@ interface DownloadPlatform {
   variants: DownloadVariant[];
 }
 
-const latestVersion = '2.0.0';
+const latestVersion = '2.1.0';
 
-const releasePageUrl = 'https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/tag/v2.0.0';
+const releasePageUrl = 'https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/tag/v2.1.0';
 const releasesUrl = 'https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases';
-const releaseBaseUrl = 'https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.0.0';
+const releaseBaseUrl = 'https://github.com/Z1RO014011/MusicPlayer--Jasmine-/releases/download/v2.1.0';
 
 const platforms: DownloadPlatform[] = [
   {
@@ -34,22 +34,22 @@ const platforms: DownloadPlatform[] = [
       {
         labelKey: 'download.macAppleDmg',
         metaKey: 'download.dmgMeta',
-        url: `${releaseBaseUrl}/Jasmine-2.0.0-arm64.dmg`,
+        url: `${releaseBaseUrl}/Jasmine-2.1.0-arm64.dmg`,
       },
       {
         labelKey: 'download.macIntelDmg',
         metaKey: 'download.dmgMeta',
-        url: `${releaseBaseUrl}/Jasmine-2.0.0.dmg`,
+        url: `${releaseBaseUrl}/Jasmine-2.1.0.dmg`,
       },
       {
         labelKey: 'download.macZip',
         metaKey: 'download.zipMeta',
-        url: `${releaseBaseUrl}/Jasmine-2.0.0-arm64-mac.zip`,
+        url: `${releaseBaseUrl}/Jasmine-2.1.0-arm64-mac.zip`,
       },
       {
         labelKey: 'download.macIntelZip',
         metaKey: 'download.zipMeta',
-        url: `${releaseBaseUrl}/Jasmine-2.0.0-mac.zip`,
+        url: `${releaseBaseUrl}/Jasmine-2.1.0-mac.zip`,
       },
     ],
   },
@@ -63,7 +63,7 @@ const platforms: DownloadPlatform[] = [
       {
         labelKey: 'download.windowsInstaller',
         metaKey: 'download.windowsMeta',
-        url: `${releaseBaseUrl}/Jasmine.Setup.2.0.0.exe`,
+        url: `${releaseBaseUrl}/Jasmine.Setup.2.1.0.exe`,
       },
     ],
   },
@@ -116,7 +116,7 @@ export function DownloadView() {
           <div className="download-hero-actions">
             <a
               className="download-primary-btn"
-              href={`${releaseBaseUrl}/Jasmine-2.0.0-arm64.dmg`}
+              href={`${releaseBaseUrl}/Jasmine-2.1.0-arm64.dmg`}
               target="_blank"
               rel="noreferrer"
             >
