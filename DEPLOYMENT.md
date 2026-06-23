@@ -10,6 +10,7 @@
 - Web 根目录：`/var/www/music-player`
 - 前端服务：Nginx 静态文件
 - 后端 API：`NeteaseCloudMusicApi`，本机监听 `127.0.0.1:3000`
+- 统计 API：Jasmine Analytics API，本机监听 `127.0.0.1:3001`
 - SSH 端口：`2222`
 - HTTPS：Let's Encrypt + Certbot
 
@@ -93,6 +94,7 @@ sudo chown -R root:root /var/www/music-player
 
 ```bash
 sudo mkdir -p /opt/jasmine-api
+sudo mkdir -p /opt/jasmine-analytics
 ```
 
 ## 5. 部署网易云 API 服务
@@ -159,7 +161,62 @@ ss -ltnp | grep :3000
 journalctl -u jasmine-ncm-api -n 100 --no-pager
 ```
 
-## 6. Nginx 配置
+## 6. 部署统计 API 服务
+
+统计 API 服务运行在服务器本机 `127.0.0.1:3001`，只给 Nginx 反向代理访问，不直接暴露公网端口。
+
+在服务器上：
+
+```bash
+cd /opt/jasmine-analytics
+npm init -y
+npm install express better-sqlite3
+```
+
+把本项目的 `analytics/server.cjs` 和 `scripts/start-analytics-api.cjs` 上传到服务器：
+
+```bash
+scp -P 2222 analytics/server.cjs root@120.26.174.241:/opt/jasmine-analytics/server.cjs
+scp -P 2222 scripts/start-analytics-api.cjs root@120.26.174.241:/opt/jasmine-analytics/start-analytics-api.cjs
+```
+
+创建 systemd 服务：
+
+```bash
+sudo nano /etc/systemd/system/jasmine-analytics-api.service
+```
+
+写入：
+
+```ini
+[Unit]
+Description=Jasmine Analytics API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/jasmine-analytics
+ExecStart=/usr/bin/node /opt/jasmine-analytics/start-analytics-api.cjs
+Restart=always
+RestartSec=3
+Environment=HOST=127.0.0.1
+Environment=PORT=3001
+Environment=ANALYTICS_DB_PATH=/opt/jasmine-analytics/analytics.sqlite
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动服务：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now jasmine-analytics-api
+sudo systemctl status jasmine-analytics-api --no-pager
+ss -ltnp | grep :3001
+```
+
+## 7. Nginx 配置
 
 创建站点配置：
 
@@ -187,6 +244,15 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    location /analytics-api/ {
+        proxy_pass http://127.0.0.1:3001/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -201,7 +267,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-## 7. 配置 HTTPS
+## 8. 配置 HTTPS
 
 确认域名已经解析到服务器后执行：
 
@@ -217,7 +283,7 @@ Certbot 会自动修改 Nginx 配置，加入 443 HTTPS 和 HTTP 跳转 HTTPS。
 sudo certbot renew --dry-run
 ```
 
-## 8. 本地构建前端
+## 9. 本地构建前端
 
 本项目 `vite.config.ts` 默认 base 是 `/music-player/`，这是给 GitHub Pages 用的。
 
